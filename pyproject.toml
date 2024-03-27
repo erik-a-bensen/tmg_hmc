@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "tmv_hmc"
+name = "tmg_hmc"
 version = "0.0.1"
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
