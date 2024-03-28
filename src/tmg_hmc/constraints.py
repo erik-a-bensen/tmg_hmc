@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Protocol, Tuple
+from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
 class Constraint(Protocol):
     def is_satisfied(self, x: np.ndarray) -> bool:
@@ -42,7 +43,7 @@ class LinearConstraint(Constraint):
         s1 = -np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
         s2 = np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
         s = np.array([s1, s2])
-        return np.min(s[s > 0])
+        return nanmin(s[s > 0])
 
 class SimpleQuadraticConstraint(Constraint):
     """
@@ -73,7 +74,7 @@ class SimpleQuadraticConstraint(Constraint):
         s2 = (np.arcsin((-q1-2*q3)/(q1^2+q4^2)) -
               np.arctan(q1/q4)) / 2
         s = np.array([s1, s2])
-        return np.min(s[s > 0])
+        return nanmin(s[s > 0])
 
 class QuadraticConstraint(Constraint):
     """
@@ -102,5 +103,7 @@ class QuadraticConstraint(Constraint):
         return q1, q2, q3, q4, q5
 
     def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:
-        pass
-    #TODO get solutions from Mathematica into Python
+        qs = self.compute_q(a, b)
+        s1, s2, s3, s4 = soln1(*qs), soln2(*qs), soln3(*qs), soln4(*qs)
+        s = np.array([s1, s2, s3, s4])
+        return nanmin(s[s > 0])
