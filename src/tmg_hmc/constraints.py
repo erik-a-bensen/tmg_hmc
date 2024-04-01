@@ -27,6 +27,12 @@ class LinearConstraint(Constraint):
 
     def is_satisfied(self, x: np.ndarray) -> bool:
         return self.f.T @ x + self.c >= 0
+    
+    def is_zero(self, x: np.ndarray) -> bool:
+        return np.isclose(self.f.T @ x + self.c, 0)
+    
+    def value(self, x: np.ndarray) -> float:
+        return self.f.T @ x + self.c
 
     def normal(self, x: np.ndarray) -> np.ndarray:
         return self.f
@@ -37,17 +43,18 @@ class LinearConstraint(Constraint):
         q2 = f.T @ b
         return q1, q2
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+        a, b = xdot, x
         q1, q2 = self.compute_q(a, b)
         c = self.c
         s1 = -np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
         s2 = np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
         s = np.array([s1, s2])
-        return nanmin(s[s > 0])
+        return nanmin(s[s >= 0])
 
 class SimpleQuadraticConstraint(Constraint):
     """
-    Constraint of the form x^T A x + c >= 0
+    Constraint of the form x**T A x + c >= 0
     """
     def __init__(self, A: np.ndarray, c: float):
         self.A = A
@@ -67,18 +74,19 @@ class SimpleQuadraticConstraint(Constraint):
         q4 = 2 * a.T @ A @ b
         return q1, q3, q4
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+        a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
-        s1 = (np.pi - np.arcsin((-q1-2*q3)/(q1^2+q4^2)) -
+        s1 = (np.pi - np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
               np.arctan(q1/q4)) / 2
-        s2 = (np.arcsin((-q1-2*q3)/(q1^2+q4^2)) -
+        s2 = (np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
               np.arctan(q1/q4)) / 2
         s = np.array([s1, s2])
         return nanmin(s[s > 0])
 
 class QuadraticConstraint(Constraint):
     """
-    Constraint of the form x^T A x + b^T x + c >= 0
+    Constraint of the form x**T A x + b**T x + c >= 0
     """
     def __init__(self, A: np.ndarray, b: np.ndarray, c: float):
         self.A = A
@@ -102,7 +110,8 @@ class QuadraticConstraint(Constraint):
         q5 = B.T @ a
         return q1, q2, q3, q4, q5
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+        a, b = xdot, x
         qs = self.compute_q(a, b)
         s1, s2, s3, s4 = soln1(*qs), soln2(*qs), soln3(*qs), soln4(*qs)
         s = np.array([s1, s2, s3, s4])
