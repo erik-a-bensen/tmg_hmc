@@ -12,10 +12,10 @@ class Constraint(Protocol):
     def normal(self, x: np.ndarray) -> np.ndarray:
         pass
 
-    def reflect(self, x: np.ndarray, s: float) -> np.ndarray:
+    def reflect(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         f = self.normal(x)
         f = f / np.linalg.norm(f)
-        return s - 2 * (f.T @ s) * f
+        return xdot - 2 * (f.T @ xdot) * f
 
 class LinearConstraint(Constraint):
     """
@@ -47,10 +47,13 @@ class LinearConstraint(Constraint):
         a, b = xdot, x
         q1, q2 = self.compute_q(a, b)
         c = self.c
-        s1 = -np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
-        s2 = np.arccos(-c/np.sqrt(q1**2 + q2**2)) + np.arctan(q1/q2)
+        u = np.sqrt(q1**2 + q2**2)
+        if u < abs(c): # No intersection
+            return np.nan
+        s1 = -np.arccos(-c/u) + np.arctan(q1/q2)
+        s2 = np.arccos(-c/u) + np.arctan(q1/q2)
         s = np.array([s1, s2])
-        return nanmin(s[s >= 0])
+        return nanmin(s[s > 0])
 
 class SimpleQuadraticConstraint(Constraint):
     """
