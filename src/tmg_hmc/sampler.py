@@ -24,21 +24,25 @@ class TMVSampler:
             raise ValueError("Sigma must be positive semi-definite")
         
     def add_constraint(self, *, A: np.ndarray = None, f: np.ndarray = None, c: float = 0.0) -> None:
-        match [A, f]:
-            case [np.ndarray, np.ndarray]:
-                self.constraints.append(QuadraticConstraint(A, f, c))
-            case [np.ndarray, None]:
-                self.constraints.append(SimpleQuadraticConstraint(A, c))
-            case [None, np.ndarray]:
-                self.constraints.append(LinearConstraint(f, c))
-            case [None, None]:
-                raise ValueError("Must provide either A or f")
+        # Reshape f to be a column vector
+        if f is not None:
+            f = f.reshape(self.dim, 1)
+        if A is not None and f is not None:
+            self.constraints.append(QuadraticConstraint(A, f, c))
+        elif A is not None and f is None:
+            self.constraints.append(SimpleQuadraticConstraint(A, c))
+        elif A is None and f is not None:
+            self.constraints.append(LinearConstraint(f, c))
+        else:
+            raise ValueError("Must provide either A or f")
             
     def _constraints_satisfied(self, x: np.ndarray) -> bool:
         return all([c.is_satisfied(x) for c in self.constraints])
     
-    def _propagate(self, x: np.ndarray, xdot: np.ndarray, t: float) -> np.ndarray:
-        return self.mu + xdot * np.sin(t) + (x - self.mu) * np.cos(t)
+    def _propagate(self, x: np.ndarray, xdot: np.ndarray, t: float) -> Tuple[np.ndarray, np.ndarray]:
+        xnew = self.mu + xdot * np.sin(t) + (x - self.mu) * np.cos(t)
+        xdotnew = xdot * np.cos(t) - (x - self.mu) * np.sin(t)
+        return xnew, xdotnew
     
     def _hit_time(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[float, Constraint]:
         times = [c.hit_time(x, xdot) for c in self.constraints]
@@ -49,24 +53,38 @@ class TMVSampler:
     
     def _iterate(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         t = 0
-        while t < self.T:
+        i = 0
+        while True:
+            i += 1
             h, c = self._hit_time(x, xdot)
             if h > self.T - t or np.isnan(h):
-                return self._propagate(x, xdot, self.T - t), xdot
-            x = self._propagate(x, xdot, h)
+                break
+            xdotprev = xdot
+            x, xdot = self._propagate(x, xdot, h)
             xdot = c.reflect(x, xdot)
             t += h
+            if c.value(x) < 0:
+                epsilon = 1e-6
+                print(f"constraint value: {c.value(x)}")
+                print(f"x: {x.flatten()}")
+                print(f"xdot reflected: {xdot.flatten()}")
+                x, xdot = self._propagate(x, xdotprev, -epsilon)
+                print(f"x hack corrected: {x.flatten()}")
+                print(f"Corrected constraint value: {c.value(x)}")
+                t -= epsilon
+        x, xdot = self._propagate(x, xdot, self.T - t)
         return x
             
-    def sample(self, n_samples: int, x0: np.ndarray, burn_in: int = 100) -> np.ndarray:
+    def sample(self, x0: np.ndarray, n_samples: int, burn_in: int = 100) -> np.ndarray:
         if not self._constraints_satisfied(x0):
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
         x = x0
         for i in range(burn_in):
-            xdot = np.random.multivariate_normal(np.zeros(self.dim), self.Sigma)
+            xdot = np.random.multivariate_normal(np.zeros(self.dim), self.Sigma).reshape(self.dim, 1)
             x = self._iterate(x, xdot)
         for i in range(n_samples):
-            xdot = np.random.multivariate_normal(np.zeros(self.dim), self.Sigma)
+            xdot = np.random.multivariate_normal(np.zeros(self.dim), self.Sigma).reshape(self.dim, 1)
             x = self._iterate(x, xdot)
             samples[i,:] = x.flatten()
+        return samples
