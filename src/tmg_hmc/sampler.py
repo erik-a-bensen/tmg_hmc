@@ -59,20 +59,17 @@ class TMVSampler:
             h, c = self._hit_time(x, xdot)
             if h > self.T - t or np.isnan(h):
                 break
-            xdotprev = xdot
             x, xdot = self._propagate(x, xdot, h)
-            xdot = c.reflect(x, xdot)
+            # if c.value(x) < -0.0:
+            #     epsilon = 1e-10
+            #     x, xdot = self._propagate(x, xdot, -epsilon)
+            #     t -= epsilon
+            if c.is_zero(x):
+                xdot = c.reflect(x, xdot)
             t += h
-            if c.value(x) < 0:
-                epsilon = 1e-6
-                print(f"constraint value: {c.value(x)}")
-                print(f"x: {x.flatten()}")
-                print(f"xdot reflected: {xdot.flatten()}")
-                x, xdot = self._propagate(x, xdotprev, -epsilon)
-                print(f"x hack corrected: {x.flatten()}")
-                print(f"Corrected constraint value: {c.value(x)}")
-                t -= epsilon
         x, xdot = self._propagate(x, xdot, self.T - t)
+        if not c.is_satisfied(x):
+            raise ValueError("Error at final step")
         return x
             
     def sample(self, x0: np.ndarray, n_samples: int, burn_in: int = 100) -> np.ndarray:

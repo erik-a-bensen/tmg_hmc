@@ -2,6 +2,9 @@ import numpy as np
 from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
+pis = np.array([-np.pi, 0, np.pi])
+eps = 1e-8
+
 class Constraint(Protocol):
     def is_satisfied(self, x: np.ndarray) -> bool:
         pass
@@ -50,10 +53,10 @@ class LinearConstraint(Constraint):
         u = np.sqrt(q1**2 + q2**2)
         if u < abs(c): # No intersection
             return np.nan
-        s1 = -np.arccos(-c/u) + np.arctan(q1/q2)
-        s2 = np.arccos(-c/u) + np.arctan(q1/q2)
-        s = np.array([s1, s2])
-        return nanmin(s[s > 0])
+        s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
+        s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
+        s = np.hstack([s1, s2])
+        return nanmin(s[s > eps])
 
 class SimpleQuadraticConstraint(Constraint):
     """
@@ -65,6 +68,9 @@ class SimpleQuadraticConstraint(Constraint):
 
     def is_satisfied(self, x: np.ndarray) -> bool:
         return x.T @ self.A @ x + self.c >= 0
+    
+    def value(self, x: np.ndarray) -> float:
+        return x.T @ self.A @ x + self.c
 
     def normal(self, x: np.ndarray) -> np.ndarray:
         return 2 * self.A @ x
@@ -81,10 +87,10 @@ class SimpleQuadraticConstraint(Constraint):
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         s1 = (np.pi - np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
-              np.arctan(q1/q4)) / 2
+              np.arctan(q1/q4)) / 2 + pis
         s2 = (np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
-              np.arctan(q1/q4)) / 2
-        s = np.array([s1, s2])
+              np.arctan(q1/q4)) / 2 + pis
+        s = np.hstack([s1, s2])
         return nanmin(s[s > 0])
 
 class QuadraticConstraint(Constraint):
