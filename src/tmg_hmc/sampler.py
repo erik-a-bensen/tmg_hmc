@@ -45,7 +45,7 @@ class TMVSampler:
         return xnew, xdotnew
     
     def _hit_time(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[float, Constraint]:
-        times = [c.hit_time(x, xdot) for c in self.constraints]
+        times = np.array([c.hit_time(x, xdot) for c in self.constraints])
         ind = nanargmin(times)
         if ind is None:
             return np.nan, None
@@ -53,12 +53,8 @@ class TMVSampler:
     
     def _iterate(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         t = 0
-        i = 0
-        while True:
-            i += 1
-            h, c = self._hit_time(x, xdot)
-            if h > self.T - t or np.isnan(h):
-                break
+        h, c = self._hit_time(x, xdot)
+        while not (h > self.T - t or np.isnan(h)):
             x, xdot = self._propagate(x, xdot, h)
             # if c.value(x) < -0.0:
             #     epsilon = 1e-10
@@ -67,8 +63,9 @@ class TMVSampler:
             if c.is_zero(x):
                 xdot = c.reflect(x, xdot)
             t += h
+            h, c = self._hit_time(x, xdot)
         x, xdot = self._propagate(x, xdot, self.T - t)
-        if not c.is_satisfied(x):
+        if not self._constraints_satisfied(x):
             raise ValueError("Error at final step")
         return x
             

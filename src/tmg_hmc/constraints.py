@@ -2,7 +2,7 @@ import numpy as np
 from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
-pis = np.array([-np.pi, 0, np.pi])
+pis = np.array([-2*np.pi, -np.pi, 0, np.pi, 2*np.pi])
 eps = 1e-8
 
 class Constraint(Protocol):

@@ -3,10 +3,18 @@ import numpy as np
 np.seterr(divide='ignore', invalid='ignore')
 
 def nanmin(arr) -> float:
-    return np.nan if len(arr) == 0 else np.min(arr)
+    if len(arr) == 0:
+        return np.nan
+    elif np.isnan(arr).all():
+        return np.nan
+    else:
+        return np.nanmin(arr)
 
 def nanargmin(arr) -> int | None:
-    return None if len(arr) == 0 else np.argmin(arr)
+    if len(arr) == 0 or np.isnan(arr).all():
+        return None
+    else:
+        return np.nanargmin(arr)
 
 def soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     return -np.arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) - np.sqrt((q1*q2 + q4*q5)**2/(q1**2 + q4**2)**2 - (2*(q2**2 + 2*q1*q3 - q4**2 + q5**2))/(3.*(q1**2 + q4**2)) + 
