@@ -128,7 +128,7 @@ class QuadraticConstraint(Constraint):
         A = self.A
         B = self.b
         c = self.c
-        q1 = b.T @ A @ b - a.T @ A @ b
+        q1 = b.T @ A @ b - a.T @ A @ a
         q2 = B.T @ b
         q3 = c + a.T @ A @ a
         q4 = 2 * a.T @ A @ b
@@ -138,6 +138,9 @@ class QuadraticConstraint(Constraint):
     def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
         a, b = xdot, x
         qs = self.compute_q(a, b)
-        s1, s2, s3, s4 = soln1(*qs), soln2(*qs), soln3(*qs), soln4(*qs)
-        s = np.array([s1, s2, s3, s4])
+        s1 = soln1(*qs) + pis
+        s2 = soln2(*qs) + pis
+        s3 = soln3(*qs) + pis
+        s4 = soln4(*qs) + pis
+        s = np.hstack([s1, s2, s3, s4])
         return nanmin(s[s > eps])
