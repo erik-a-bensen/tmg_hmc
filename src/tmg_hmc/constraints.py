@@ -2,7 +2,7 @@ import numpy as np
 from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
-pis = np.array([-2*np.pi, -np.pi, 0, np.pi, 2*np.pi])
+pis = np.array([-np.pi, 0, np.pi])
 eps = 1e-8
 
 class Constraint(Protocol):
@@ -69,6 +69,9 @@ class SimpleQuadraticConstraint(Constraint):
     def is_satisfied(self, x: np.ndarray) -> bool:
         return x.T @ self.A @ x + self.c >= 0
     
+    def is_zero(self, x: np.ndarray) -> bool:
+        return np.isclose(x.T @ self.A @ x + self.c, 0)
+    
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.c
 
@@ -78,7 +81,7 @@ class SimpleQuadraticConstraint(Constraint):
     def compute_q(self, a, b) -> Tuple[float, float, float]:
         A = self.A
         c = self.c
-        q1 = b.T @ A @ b - a.T @ A @ b
+        q1 = b.T @ A @ b - a.T @ A @ a
         q3 = c + a.T @ A @ a
         q4 = 2 * a.T @ A @ b
         return q1, q3, q4
@@ -86,12 +89,13 @@ class SimpleQuadraticConstraint(Constraint):
     def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
-        s1 = (np.pi - np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
-              np.arctan(q1/q4)) / 2 + pis
-        s2 = (np.arcsin((-q1-2*q3)/(q1**2+q4**2)) -
-              np.arctan(q1/q4)) / 2 + pis
+        u = np.sqrt(q1**2 + q4**2)
+        s1 = (np.pi + np.arcsin((q1+2*q3)/u) -
+              np.arctan(q1/q4) + pis) / 2 
+        s2 = (-np.arcsin((q1+2*q3)/u) -
+              np.arctan(q1/q4)+ pis) / 2 
         s = np.hstack([s1, s2])
-        return nanmin(s[s > 0])
+        return nanmin(s[s > eps])
 
 class QuadraticConstraint(Constraint):
     """
@@ -104,6 +108,12 @@ class QuadraticConstraint(Constraint):
 
     def is_satisfied(self, x: np.ndarray) -> bool:
         return x.T @ self.A @ x + self.b.T @ x + self.c >= 0
+    
+    def is_zero(self, x: np.ndarray) -> bool:
+        return np.isclose(x.T @ self.A @ x + self.b.T @ x + self.c, 0)
+    
+    def value(self, x: np.ndarray) -> float:
+        return x.T @ self.A @ x + self.b.T @ x + self.c
 
     def normal(self, x: np.ndarray) -> np.ndarray:
         return 2 * self.A @ x + self.b
@@ -124,4 +134,4 @@ class QuadraticConstraint(Constraint):
         qs = self.compute_q(a, b)
         s1, s2, s3, s4 = soln1(*qs), soln2(*qs), soln3(*qs), soln4(*qs)
         s = np.array([s1, s2, s3, s4])
-        return nanmin(s[s > 0])
+        return nanmin(s[s > eps])
