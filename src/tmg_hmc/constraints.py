@@ -2,7 +2,7 @@ import numpy as np
 from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
-pis = np.array([-np.pi, 0, np.pi])
+pis = np.array([-2*np.pi, -np.pi, 0, np.pi, 2*np.pi])
 eps = 1e-8
 
 class Constraint(Protocol):
@@ -63,6 +63,9 @@ class SimpleQuadraticConstraint(Constraint):
     Constraint of the form x**T A x + c >= 0
     """
     def __init__(self, A: np.ndarray, c: float):
+        # Check that A is symmetric
+        if not np.allclose(A, A.T):
+            raise ValueError("A must be symmetric")
         self.A = A
         self.c = c
 
@@ -102,6 +105,9 @@ class QuadraticConstraint(Constraint):
     Constraint of the form x**T A x + b**T x + c >= 0
     """
     def __init__(self, A: np.ndarray, b: np.ndarray, c: float):
+        # Check that A is symmetric
+        if not np.allclose(A, A.T):
+            raise ValueError("A must be symmetric")
         self.A = A
         self.b = b
         self.c = c
