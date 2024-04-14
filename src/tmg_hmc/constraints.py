@@ -1,19 +1,23 @@
 import numpy as np
 from typing import Protocol, Tuple
+#from tmg_hmc.utils_quartic import nanmin, soln1, soln2, soln3, soln4
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
-pis = np.array([-2*np.pi, -np.pi, 0, np.pi, 2*np.pi])
+pis = np.array([-np.pi, 0, np.pi])
 eps = 1e-8
 
 class Constraint(Protocol):
+    def value(self, x: np.ndarray) -> float:...
+        
     def is_satisfied(self, x: np.ndarray) -> bool:
-        pass
+        return self.value(x) >= 0
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:
-        pass
+    def is_zero(self, x: np.ndarray) -> bool:
+        return np.isclose(self.value(x), 0)
 
-    def normal(self, x: np.ndarray) -> np.ndarray:
-        pass
+    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:...
+
+    def normal(self, x: np.ndarray) -> np.ndarray:...
 
     def reflect(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         f = self.normal(x)
@@ -27,12 +31,6 @@ class LinearConstraint(Constraint):
     def __init__(self, f: np.ndarray, c: float):
         self.f = f
         self.c = c
-
-    def is_satisfied(self, x: np.ndarray) -> bool:
-        return self.f.T @ x + self.c >= 0
-    
-    def is_zero(self, x: np.ndarray) -> bool:
-        return np.isclose(self.f.T @ x + self.c, 0)
     
     def value(self, x: np.ndarray) -> float:
         return self.f.T @ x + self.c
@@ -68,12 +66,6 @@ class SimpleQuadraticConstraint(Constraint):
             raise ValueError("A must be symmetric")
         self.A = A
         self.c = c
-
-    def is_satisfied(self, x: np.ndarray) -> bool:
-        return x.T @ self.A @ x + self.c >= 0
-    
-    def is_zero(self, x: np.ndarray) -> bool:
-        return np.isclose(x.T @ self.A @ x + self.c, 0)
     
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.c
@@ -111,12 +103,6 @@ class QuadraticConstraint(Constraint):
         self.A = A
         self.b = b
         self.c = c
-
-    def is_satisfied(self, x: np.ndarray) -> bool:
-        return x.T @ self.A @ x + self.b.T @ x + self.c >= 0
-    
-    def is_zero(self, x: np.ndarray) -> bool:
-        return np.isclose(x.T @ self.A @ x + self.b.T @ x + self.c, 0)
     
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.b.T @ x + self.c
@@ -137,10 +123,12 @@ class QuadraticConstraint(Constraint):
 
     def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
         a, b = xdot, x
+        pis = np.array([-2*np.pi, 0, 2*np.pi])
         qs = self.compute_q(a, b)
-        s1 = soln1(*qs) + pis
-        s2 = soln2(*qs) + pis
-        s3 = soln3(*qs) + pis
-        s4 = soln4(*qs) + pis
+        s1 = soln1(*qs) + pis#np.arccos(soln1(*qs)) + pis/2
+        s2 = soln2(*qs) + pis#np.arccos(soln2(*qs)) + pis/2
+        s3 = soln3(*qs) + pis#np.arccos(soln3(*qs)) + pis/2
+        s4 = soln4(*qs) + pis#np.arccos(soln4(*qs)) + pis/2
         s = np.hstack([s1, s2, s3, s4])
+        print(f"s: {s}")
         return nanmin(s[s > eps])
