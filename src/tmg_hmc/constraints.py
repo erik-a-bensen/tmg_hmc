@@ -62,8 +62,6 @@ class SimpleQuadraticConstraint(Constraint):
     """
     def __init__(self, A: np.ndarray, c: float):
         # Check that A is symmetric
-        if not np.allclose(A, A.T):
-            raise ValueError("A must be symmetric")
         self.A = A
         self.c = c
     
@@ -97,9 +95,6 @@ class QuadraticConstraint(Constraint):
     Constraint of the form x**T A x + b**T x + c >= 0
     """
     def __init__(self, A: np.ndarray, b: np.ndarray, c: float):
-        # Check that A is symmetric
-        if not np.allclose(A, A.T):
-            raise ValueError("A must be symmetric")
         self.A = A
         self.b = b
         self.c = c
