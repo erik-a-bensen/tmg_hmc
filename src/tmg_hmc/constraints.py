@@ -4,7 +4,7 @@ from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
 pis = np.array([-np.pi, 0, np.pi])
-eps = 1e-8
+eps = 1e-12
 
 class Constraint(Protocol):
     def value(self, x: np.ndarray) -> float:...
