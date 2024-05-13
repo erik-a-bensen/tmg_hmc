@@ -4,7 +4,7 @@ from typing import Protocol, Tuple
 from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
 
 pis = np.array([-np.pi, 0, np.pi])
-eps = 1e-12
+eps = 1e-10
 
 class Constraint(Protocol):
     def value(self, x: np.ndarray) -> float:...
@@ -21,7 +21,8 @@ class Constraint(Protocol):
 
     def reflect(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         f = self.normal(x)
-        f = f / np.linalg.norm(f)
+        norm = np.sqrt(f.T @ f)[0,0]
+        f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
 
 class LinearConstraint(Constraint):
