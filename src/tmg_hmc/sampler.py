@@ -34,16 +34,17 @@ class TMGSampler:
                 raise ValueError("Sigma must be positive semi-definite")
         self.Sigma_half = self.V @ np.diag(np.sqrt(self.s)) @ self.V.T
         self.Sigma_inv_half = np.linalg.inv(self.Sigma_half)
-        self.Sigma_half = np.linalg.cholesky(Sigma)
         
     def add_constraint(self, *, A: np.ndarray = None, f: np.ndarray = None, c: float = 0.0, sparse: bool = True) -> None:
-        # S = self.Sigma_half
+        S = self.Sigma_half
         if f is not None:
-            f = f.reshape(self.dim, 1)
+            f = f.reshape(self.dim, 1) 
+            f = S @ f 
+        print(f)
         if A is not None:
             if not np.allclose(A, A.T):
                 raise ValueError("A must be symmetric")
-            # A = S @ A @ S
+            A = S @ A @ S
             if sparse:
                 A = csc_matrix(A)
         
@@ -57,7 +58,6 @@ class TMGSampler:
             raise ValueError("Must provide either A or f")
             
     def _constraints_satisfied(self, x: np.ndarray) -> bool:
-        #print(f"Min constraint value {min([c.value(x) for c in self.constraints])}")
         if len(self.constraints) == 0:
             return True
         return all([c.is_satisfied(x) for c in self.constraints])
@@ -95,11 +95,11 @@ class TMGSampler:
         return x
     
     def sample_xdot(self) -> np.ndarray:
-        return self.Sigma_half @ np.random.standard_normal(self.dim).reshape(self.dim, 1)
+        return np.random.standard_normal(self.dim).reshape(self.dim, 1)
             
     def sample(self, x0: np.ndarray, n_samples: int, burn_in: int = 100, verbose=False) -> np.ndarray:
         x0 = x0.reshape(self.dim, 1)
-        # x0 = self.Sigma_inv_half @ (x0 - self.mu)
+        x0 = self.Sigma_inv_half @ (x0 - self.mu)
         if not self._constraints_satisfied(x0):
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
@@ -114,6 +114,5 @@ class TMGSampler:
                 print(f"sample iteration: {i+1} of {n_samples}")
             xdot = self.sample_xdot()
             x = self._iterate(x, xdot, verbose)
-            # samples[i,:] = (self.Sigma_half@x).flatten()
-            samples[i,:] = x.flatten()
+            samples[i,:] = (self.Sigma_half@x).flatten() + self.mu.flatten()
         return samples
