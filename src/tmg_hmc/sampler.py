@@ -60,7 +60,8 @@ class TMGSampler:
         elif nonzero_A and (not nonzero_f):
             self.constraints.append(SimpleQuadraticConstraint(A_new, c_new))
         elif (not nonzero_A) and nonzero_f:
-            print("Linear constraint added")
+            print(f"f_new: {f_new}")
+            print(f"c_new: {c_new}")
             self.constraints.append(LinearConstraint(f_new, c_new))
         else:
             raise ValueError("Must provide either A or f")
@@ -71,8 +72,8 @@ class TMGSampler:
         return all([c.is_satisfied(x) for c in self.constraints])
     
     def _propagate(self, x: np.ndarray, xdot: np.ndarray, t: float) -> Tuple[np.ndarray, np.ndarray]:
-        xnew = self.mu + xdot * np.sin(t) + (x - self.mu) * np.cos(t)
-        xdotnew = xdot * np.cos(t) - (x - self.mu) * np.sin(t)
+        xnew = xdot * np.sin(t) + x * np.cos(t)
+        xdotnew = xdot * np.cos(t) - x * np.sin(t)
         return xnew, xdotnew
     
     def _hit_time(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[float, Constraint]:
