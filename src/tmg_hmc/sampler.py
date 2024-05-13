@@ -37,23 +37,31 @@ class TMGSampler:
         
     def add_constraint(self, *, A: np.ndarray = None, f: np.ndarray = None, c: float = 0.0, sparse: bool = True) -> None:
         S = self.Sigma_half
+        mu = self.mu
         if f is not None:
             f = f.reshape(self.dim, 1) 
-            f = S @ f 
-        print(f)
+        else:
+            f = np.zeros((self.dim, 1))
         if A is not None:
             if not np.allclose(A, A.T):
                 raise ValueError("A must be symmetric")
-            A = S @ A @ S
-            if sparse:
-                A = csc_matrix(A)
+        else:
+            A = np.zeros((self.dim, self.dim))
+
+        A_new = S @ A @ S
+        f_new = 2*S @ A @ mu + S @ f
+        c_new = c + mu.T @ A @ mu + f.T @ mu
+
+        nonzero_A = np.any(A_new != 0)
+        nonzero_f = np.any(f_new != 0)
         
-        if A is not None and f is not None:
-            self.constraints.append(QuadraticConstraint(A, f, c))
-        elif A is not None and f is None:
-            self.constraints.append(SimpleQuadraticConstraint(A, c))
-        elif A is None and f is not None:
-            self.constraints.append(LinearConstraint(f, c))
+        if nonzero_A and nonzero_f:
+            self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
+        elif nonzero_A and (not nonzero_f):
+            self.constraints.append(SimpleQuadraticConstraint(A_new, c_new))
+        elif (not nonzero_A) and nonzero_f:
+            print("Linear constraint added")
+            self.constraints.append(LinearConstraint(f_new, c_new))
         else:
             raise ValueError("Must provide either A or f")
             
@@ -91,6 +99,8 @@ class TMGSampler:
         if verbose:
             print(f"\tNumber of collision checks: {i}")
         if not self._constraints_satisfied(x):
+            print(self.constraints[0].value(x))
+            print(f"x: {x}")
             raise ValueError("Error at final step")
         return x
     
