@@ -16,8 +16,7 @@ class TMGSampler:
         self.Sigma = Sigma
         self.T = T
         self.constraints = []
-        self.parallel = False
-        self.phit_time = None
+
         # Checks 
         if not np.shape(Sigma) == (self.dim, self.dim):
             raise ValueError("Sigma must be a square matrix")
