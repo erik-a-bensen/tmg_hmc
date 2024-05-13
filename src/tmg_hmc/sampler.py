@@ -54,14 +54,15 @@ class TMGSampler:
 
         nonzero_A = np.any(A_new != 0)
         nonzero_f = np.any(f_new != 0)
+
+        if sparse:
+            A_new = csc_matrix(A_new)
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
         elif nonzero_A and (not nonzero_f):
             self.constraints.append(SimpleQuadraticConstraint(A_new, c_new))
         elif (not nonzero_A) and nonzero_f:
-            print(f"f_new: {f_new}")
-            print(f"c_new: {c_new}")
             self.constraints.append(LinearConstraint(f_new, c_new))
         else:
             raise ValueError("Must provide either A or f")
