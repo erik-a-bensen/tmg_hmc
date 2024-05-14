@@ -1,9 +1,7 @@
 import numpy as np
-import ray
 from scipy.sparse import csc_matrix
-from typing import Protocol, Tuple
-from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
-from tmg_hmc.utils_quartic import nanmin, nanargmin
+from typing import Tuple
+from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
 
 class TMGSampler:
     """

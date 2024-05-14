@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Protocol, Tuple
 #from tmg_hmc.utils_quartic import nanmin, soln1, soln2, soln3, soln4
-from tmg_hmc.utils import nanmin, soln1, soln2, soln3, soln4
+from tmg_hmc.utils import soln1, soln2, soln3, soln4
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-10
