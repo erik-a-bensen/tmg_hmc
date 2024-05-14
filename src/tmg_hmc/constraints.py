@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Protocol, Tuple
 #from tmg_hmc.utils_quartic import nanmin, soln1, soln2, soln3, soln4
-from tmg_hmc.utils import soln1, soln2, soln3, soln4
+from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-10
@@ -115,16 +115,21 @@ class QuadraticConstraint(Constraint):
         q3 = c + a.T @ A @ a
         q4 = 2 * a.T @ A @ b
         q5 = B.T @ a
-        return q1, q2, q3, q4, q5
+        return q1[0,0], q2[0,0], q3[0,0], q4[0,0], q5[0,0]
 
     def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         a, b = xdot, x
-        pis = np.array([-2*np.pi, 0, 2*np.pi])
+        pis = np.array([-2, 0, 2])*np.pi
         qs = self.compute_q(a, b)
-        s1 = soln1(*qs) + pis#np.arccos(soln1(*qs)) + pis/2
-        s2 = soln2(*qs) + pis#np.arccos(soln2(*qs)) + pis/2
-        s3 = soln3(*qs) + pis#np.arccos(soln3(*qs)) + pis/2
-        s4 = soln4(*qs) + pis#np.arccos(soln4(*qs)) + pis/2
-        s = np.hstack([s1, s2, s3, s4])
+        print(f"qs: {qs}")
+        s1 = soln1(*qs) 
+        s2 = soln2(*qs) 
+        s3 = soln3(*qs)
+        s4 = soln4(*qs) 
+        s5 = soln5(*qs)
+        s6 = soln6(*qs)
+        s7 = soln7(*qs)
+        s8 = soln8(*qs)
+        s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         print(f"s: {s}")
         return s[s > eps]
