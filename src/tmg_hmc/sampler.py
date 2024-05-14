@@ -13,7 +13,6 @@ class TMGSampler:
     def __init__(self, mu: np.ndarray, Sigma: np.ndarray, T: float = np.pi/2) -> None:
         self.dim = len(mu)
         self.mu = mu.reshape(self.dim, 1)
-        self.Sigma = Sigma
         self.T = T
         self.constraints = []
 
@@ -23,16 +22,11 @@ class TMGSampler:
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
         print(f"Checking positive semi-definiteness of Sigma...")
-        self.s, self.V = np.linalg.eigh(Sigma)
-        if not np.all(self.s >= 0):
-            eps = 1e-12 # Tolerance for positive semi-definiteness
-            print("Sigma is not positive semi-definite, correcting...")
-            Sigma = Sigma + eps * np.eye(self.dim)
-            self.s, self.V = np.linalg.eigh(Sigma)
-            if not np.all(self.s >= 0):
-                raise ValueError("Sigma must be positive semi-definite")
-        self.Sigma_half = self.V @ np.diag(np.sqrt(self.s)) @ self.V.T
-        self.Sigma_inv_half = np.linalg.inv(self.Sigma_half)
+        eps = 1e-12 # Tolerance for positive semi-definiteness
+        s, V = np.linalg.eigh(Sigma + eps * np.eye(self.dim))
+        if not np.all(s >= 0):
+            raise ValueError("Sigma must be positive semi-definite")
+        self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         
     def add_constraint(self, *, A: np.ndarray = None, f: np.ndarray = None, c: float = 0.0, sparse: bool = True) -> None:
         S = self.Sigma_half
@@ -56,6 +50,7 @@ class TMGSampler:
 
         nonzero_A = np.any(A_new != 0)
         nonzero_f = np.any(f_new != 0)
+        del A, f
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
@@ -132,7 +127,7 @@ class TMGSampler:
             
     def sample(self, x0: np.ndarray, n_samples: int, burn_in: int = 100, verbose=False) -> np.ndarray:
         x0 = x0.reshape(self.dim, 1)
-        x0 = self.Sigma_inv_half @ (x0 - self.mu)
+        x0 = np.linalg.inv(self.Sigma_half) @ (x0 - self.mu)
         if not self._constraints_satisfied(x0):
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
