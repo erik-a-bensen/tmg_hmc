@@ -46,6 +46,9 @@ class TMGSampler:
                 raise ValueError("A must be symmetric")
         else:
             A = np.zeros((self.dim, self.dim))
+        
+        if sparse:
+            A = csc_matrix(A)
 
         A_new = S @ A @ S
         f_new = 2*S @ A @ mu + S @ f
@@ -53,9 +56,6 @@ class TMGSampler:
 
         nonzero_A = np.any(A_new != 0)
         nonzero_f = np.any(f_new != 0)
-
-        if sparse:
-            A_new = csc_matrix(A_new)
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
@@ -97,10 +97,10 @@ class TMGSampler:
         t = 0
         cprev = None     
         i = 0
-        h = -1
+        hs, cs = self._hit_times(x, xdot)
+        h, c = hs[0], cs[0]
         while h < self.T - t:
             i += 1
-            hs, cs = self._hit_times(x, xdot)
             inds = hs <= self.T - t
             hs = hs[inds]
             cs = cs[inds]
@@ -118,6 +118,8 @@ class TMGSampler:
                     t += h
                 else:
                     break
+            hs, cs = self._hit_times(x, xdot)
+            h, c = hs[0], cs[0]
         x, xdot = self._propagate(x, xdot, self.T - t)
         if verbose:
             print(f"\tNumber of collision checks: {i}")
