@@ -15,7 +15,7 @@ class Constraint(Protocol):
     def is_zero(self, x: np.ndarray) -> bool:
         return np.isclose(self.value(x), 0)
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> float:...
+    def hit_time(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:...
 
     def normal(self, x: np.ndarray) -> np.ndarray:...
 
@@ -45,7 +45,7 @@ class LinearConstraint(Constraint):
         q2 = f.T @ b
         return q1, q2
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         a, b = xdot, x
         q1, q2 = self.compute_q(a, b)
         c = self.c
@@ -55,7 +55,7 @@ class LinearConstraint(Constraint):
         s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s = np.hstack([s1, s2])
-        return nanmin(s[s > eps])
+        return s[s > eps]
 
 class SimpleQuadraticConstraint(Constraint):
     """
@@ -80,7 +80,7 @@ class SimpleQuadraticConstraint(Constraint):
         q4 = 2 * a.T @ A @ b
         return q1, q3, q4
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         u = np.sqrt(q1**2 + q4**2)
@@ -89,7 +89,7 @@ class SimpleQuadraticConstraint(Constraint):
         s2 = (-np.arcsin((q1+2*q3)/u) -
               np.arctan(q1/q4)+ pis) / 2 
         s = np.hstack([s1, s2])
-        return nanmin(s[s > eps])
+        return s[s > eps]
 
 class QuadraticConstraint(Constraint):
     """
@@ -117,7 +117,7 @@ class QuadraticConstraint(Constraint):
         q5 = B.T @ a
         return q1, q2, q3, q4, q5
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> float:
+    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         a, b = xdot, x
         pis = np.array([-2*np.pi, 0, 2*np.pi])
         qs = self.compute_q(a, b)
@@ -127,4 +127,4 @@ class QuadraticConstraint(Constraint):
         s4 = soln4(*qs) + pis#np.arccos(soln4(*qs)) + pis/2
         s = np.hstack([s1, s2, s3, s4])
         print(f"s: {s}")
-        return nanmin(s[s > eps])
+        return s[s > eps]

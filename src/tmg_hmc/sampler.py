@@ -76,32 +76,52 @@ class TMGSampler:
         xdotnew = xdot * np.cos(t) - x * np.sin(t)
         return xnew, xdotnew
     
-    def _hit_time(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[float, Constraint]:
-        times = np.array([c.hit_time(x, xdot) for c in self.constraints])
-        ind = nanargmin(times)
-        if ind is None:
-            return np.nan, None
-        return times[ind], self.constraints[ind]
+    def _hit_times(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        times = []
+        cs = []
+        for c in self.constraints:
+            t = c.hit_time(x, xdot)
+            if len(t) > 0:
+                times.append(t)
+                cs += [c] * len(t)
+        times = np.hstack(times)
+        nanind = np.isnan(times) & (times < self.T)
+        times = times[~nanind]
+        cs = np.array(cs)[~nanind]
+        if len(times) == 0:
+            return np.array([np.nan]), np.array([None])
+        inds = np.argsort(times)
+        return times[inds], cs[inds]
     
     def _iterate(self, x: np.ndarray, xdot: np.ndarray, verbose: bool) -> np.ndarray:
         t = 0
-        cprev = None
-        h, c = self._hit_time(x, xdot)
+        cprev = None     
         i = 0
-        while not (h > self.T - t or np.isnan(h)):
+        h = -1
+        while h < self.T - t:
             i += 1
-            x, xdot = self._propagate(x, xdot, h)
-            if c.is_zero(x):
-                xdot = c.reflect(x, xdot)
-            t += h
-            cprev = c
-            h, c = self._hit_time(x, xdot)
+            hs, cs = self._hit_times(x, xdot)
+            inds = hs <= self.T - t
+            hs = hs[inds]
+            cs = cs[inds]
+            for pos in range(len(hs)):
+                h, c = hs[pos], cs[pos]
+                x_temp, xdot_temp = self._propagate(x, xdot, h)
+                if c.is_zero(x_temp):
+                    x, xdot = x_temp, xdot_temp
+                    xdot = c.reflect(x, xdot)
+                    t += h
+                    break
+            else:
+                if pos > 0:
+                    x, xdot = x_temp, xdot_temp
+                    t += h
+                else:
+                    break
         x, xdot = self._propagate(x, xdot, self.T - t)
         if verbose:
             print(f"\tNumber of collision checks: {i}")
         if not self._constraints_satisfied(x):
-            print(self.constraints[0].value(x))
-            print(f"x: {x}")
             raise ValueError("Error at final step")
         return x
     
