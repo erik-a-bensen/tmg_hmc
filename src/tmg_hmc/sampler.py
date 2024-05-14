@@ -76,9 +76,8 @@ class TMGSampler:
         cs = []
         for c in self.constraints:
             t = c.hit_time(x, xdot)
-            if len(t) > 0:
-                times.append(t)
-                cs += [c] * len(t)
+            times.append(t)
+            cs += [c] * len(t)
         times = np.hstack(times)
         nanind = np.isnan(times) & (times < self.T)
         times = times[~nanind]

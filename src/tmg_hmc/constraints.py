@@ -51,7 +51,7 @@ class LinearConstraint(Constraint):
         c = self.c
         u = np.sqrt(q1**2 + q2**2)
         if u < abs(c): # No intersection
-            return np.nan
+            return np.array([np.nan])
         s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s = np.hstack([s1, s2])
