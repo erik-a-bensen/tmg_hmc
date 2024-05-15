@@ -5,10 +5,11 @@ np.seterr(divide='ignore', invalid='ignore')
 
 def arccos(x: float) -> float:
     val = acos(x)
-    if np.isclose(val.imag, 0):
-        return val.real
-    else:
-        return np.nan
+    # if np.isclose(val.imag, 0):
+    #     return val.real
+    # else:
+    #     return np.nan
+    return val.real
 
 def soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     return (-arccos(-0.25*(2*q1*q2 + 2*q4 + q5)/(q1**2 + q4**2) - 
