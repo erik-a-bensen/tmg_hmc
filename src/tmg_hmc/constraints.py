@@ -4,16 +4,17 @@ from typing import Protocol, Tuple
 from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 
 pis = np.array([-1, 0, 1]) * np.pi
-eps = 1e-10
+eps = 1e-12
 
 class Constraint(Protocol):
     def value(self, x: np.ndarray) -> float:...
         
     def is_satisfied(self, x: np.ndarray) -> bool:
-        return (self.value(x) > 0) or np.isclose(self.value(x), 0)
+        return self.value(x) >= 0 #or np.isclose(self.value(x), 0)
 
-    def is_zero(self, x: np.ndarray) -> bool:
-        return np.isclose(self.value(x), 0)
+    def is_zero(self, x: np.ndarray) -> Tuple[bool, bool]:
+        val = self.value(x)
+        return np.isclose(val, 0), np.isclose(val, 0, atol=1e-3)
 
     def hit_time(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:...
 
@@ -99,9 +100,6 @@ class QuadraticConstraint(Constraint):
         self.A = A
         self.b = b
         self.c = c
-
-    def is_zero(self, x: np.ndarray) -> bool:
-        return np.isclose(self.value(x), 0)#, atol=1e-1)
     
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.b.T @ x + self.c
@@ -122,7 +120,7 @@ class QuadraticConstraint(Constraint):
 
     def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
         a, b = xdot, x
-        pis = np.arange(-16,17)*np.pi/8
+        pis = np.array([-2, 0, 2])*np.pi
         qs = self.compute_q(a, b)
         print(f"qs: {qs}")
         s1 = soln1(*qs) + pis
@@ -135,4 +133,4 @@ class QuadraticConstraint(Constraint):
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         #print(f"s: {s}")
-        return np.unique(s[s > eps])
+        return np.unique(s[s > 1e-6])

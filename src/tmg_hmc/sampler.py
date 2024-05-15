@@ -86,13 +86,31 @@ class TMGSampler:
         inds = np.argsort(times)
         return times[inds], cs[inds]
     
+    def _binary_search(self, x: np.ndarray, xdot: np.ndarray, b1: float, b2: float, c: QuadraticConstraint) -> Tuple[np.ndarray, np.ndarray, float, bool]:
+        x1, _ = self._propagate(x, xdot, b1)
+        hmid = (b1 + b2) / 2
+        xmid, xdotmid = self._propagate(x, xdot, hmid)
+        if np.isclose(c.value(xmid), 0):
+            return xmid, xdotmid, hmid, True
+        if np.sign(c.value(xmid)) != np.sign(c.value(x1)):
+            return self._binary_search(x, xdot, b1, hmid, c)
+        return self._binary_search(x, xdot, hmid, b2, c)
+    
+    def _refine_hit_time(self, x: np.ndarray, xdot: np.ndarray, c: QuadraticConstraint) -> Tuple[np.ndarray, np.ndarray, float, bool]:
+        sign = np.sign(c.value(x))
+        h = 1e-3 * sign
+        x_temp, _ = self._propagate(x, xdot, h)
+        if np.sign(c.value(x_temp)) == sign:
+            return x, xdot, 0, False
+        return self._binary_search(x, xdot, 0, h, c)
+    
     def _iterate(self, x: np.ndarray, xdot: np.ndarray, verbose: bool) -> np.ndarray:
         t = 0 
         i = 0
         hs, cs = self._hit_times(x, xdot)
         h, c = hs[0], cs[0]
-        print(f"Initial x: {x.flatten()}")
-        print(f"Initial xdot: {xdot.flatten()}")
+        print(f"Initial x: ({x[0,0]}, {x[1,0]})")
+        print(f"Initial xdot: ({xdot[0,0]}, {xdot[1,0]})")
         while h < self.T - t:
             i += 1
             inds = hs < self.T - t
@@ -103,31 +121,29 @@ class TMGSampler:
                 h, c = hs[pos], cs[pos]
                 x_temp, xdot_temp = self._propagate(x, xdot, h)
                 print(f"cvalue: {c.value(x_temp)}")
-                if c.is_zero(x_temp):
+                zero, refine = c.is_zero(x_temp)
+                if refine and not zero:
+                    x_temp, xdot_temp, h_adj, zero = self._refine_hit_time(x_temp, xdot_temp, c)
+                    h += h_adj
+                if zero:
+                    # if not c.is_satisfied(x_temp):
+                    #     h -= 1e-3
+                    #     x_temp, xdot_temp = self._propagate(x, xdot, h)
+                    #     print(f"cvalue adjusted: {c.value(x_temp)}")
                     x, xdot = x_temp, xdot_temp
                     xdot = c.reflect(x, xdot)
-                    print(f"Propagated x: {x.flatten()}")
-                    print(f"Reflected xdot: {xdot.flatten()}")
+                    print(f"Hit time: {h}")
+                    print(f"Propagated x: ({x[0,0]}, {x[1,0]})")
+                    print(f"Reflected xdot: ({xdot[0,0]}, {xdot[1,0]})")
                     t += h
                     break
-                elif not c.is_satisfied(x_temp):
-                    if pos > 0:
-                        h = hs[pos-1]
-                        c = cs[pos-1]
-                        x, xdot = self._propagate(x, xdot, h)
-                        t += h
-                        print(f"Propagated x: {x.flatten()}")
-                        print(f"Propagated xdot: {xdot.flatten()}")
-                        break
-                    else:
-                        raise ValueError("Error finding constraint hit time")
             else:
                 break
             hs, cs = self._hit_times(x, xdot)
             h, c = hs[0], cs[0]
         x, xdot = self._propagate(x, xdot, self.T - t)
-        print(f"Final x: {x.flatten()}")
-        print(f"Final xdot: {xdot.flatten()}")
+        print(f"Final x: ({x[0,0]}, {x[1,0]})")
+        print(f"Final xdot: ({xdot[0,0]}, {xdot[1,0]})")
         if verbose:
             print(f"\tNumber of collision checks: {i}")
         if not self._constraints_satisfied(x):
