@@ -8,8 +8,6 @@ def arccos(x: float) -> float:
     val = acos(x)
     if not np.isclose(val.imag, 0):
         return np.nan
-    if np.isclose(val.real, 0):
-        return 0
     return val.real
 
 def soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:

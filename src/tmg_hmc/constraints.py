@@ -1,6 +1,5 @@
 import numpy as np
 from typing import Protocol, Tuple
-#from tmg_hmc.utils_quartic import nanmin, soln1, soln2, soln3, soln4
 from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 
 pis = np.array([-1, 0, 1]) * np.pi
@@ -10,7 +9,7 @@ class Constraint(Protocol):
     def value(self, x: np.ndarray) -> float:...
         
     def is_satisfied(self, x: np.ndarray) -> bool:
-        return self.value(x) >= 0 #or np.isclose(self.value(x), 0)
+        return self.value(x) >= 0 
 
     def is_zero(self, x: np.ndarray) -> Tuple[bool, bool]:
         val = self.value(x)
@@ -122,7 +121,6 @@ class QuadraticConstraint(Constraint):
         a, b = xdot, x
         pis = np.array([-2, 0, 2])*np.pi
         qs = self.compute_q(a, b)
-        print(f"qs: {qs}")
         s1 = soln1(*qs) + pis
         s2 = soln2(*qs) + pis
         s3 = soln3(*qs) + pis
@@ -132,5 +130,4 @@ class QuadraticConstraint(Constraint):
         s7 = soln7(*qs) + pis
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
-        #print(f"s: {s}")
         return np.unique(s[s > 1e-6])

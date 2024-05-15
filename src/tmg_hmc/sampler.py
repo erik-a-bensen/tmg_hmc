@@ -62,7 +62,6 @@ class TMGSampler:
     def _constraints_satisfied(self, x: np.ndarray) -> bool:
         if len(self.constraints) == 0:
             return True
-        print(f"min constraint value: {min([c.value(x) for c in self.constraints])}")
         return all([c.is_satisfied(x) for c in self.constraints])
     
     def _propagate(self, x: np.ndarray, xdot: np.ndarray, t: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -109,32 +108,21 @@ class TMGSampler:
         i = 0
         hs, cs = self._hit_times(x, xdot)
         h, c = hs[0], cs[0]
-        print(f"Initial x: ({x[0,0]}, {x[1,0]})")
-        print(f"Initial xdot: ({xdot[0,0]}, {xdot[1,0]})")
         while h < self.T - t:
             i += 1
             inds = hs < self.T - t
             hs = hs[inds]
             cs = cs[inds]
-            print(f"hs: {hs}")
             for pos in range(len(hs)):
                 h, c = hs[pos], cs[pos]
                 x_temp, xdot_temp = self._propagate(x, xdot, h)
-                print(f"cvalue: {c.value(x_temp)}")
                 zero, refine = c.is_zero(x_temp)
                 if refine and not zero:
                     x_temp, xdot_temp, h_adj, zero = self._refine_hit_time(x_temp, xdot_temp, c)
                     h += h_adj
                 if zero:
-                    # if not c.is_satisfied(x_temp):
-                    #     h -= 1e-3
-                    #     x_temp, xdot_temp = self._propagate(x, xdot, h)
-                    #     print(f"cvalue adjusted: {c.value(x_temp)}")
                     x, xdot = x_temp, xdot_temp
                     xdot = c.reflect(x, xdot)
-                    print(f"Hit time: {h}")
-                    print(f"Propagated x: ({x[0,0]}, {x[1,0]})")
-                    print(f"Reflected xdot: ({xdot[0,0]}, {xdot[1,0]})")
                     t += h
                     break
             else:
@@ -142,8 +130,6 @@ class TMGSampler:
             hs, cs = self._hit_times(x, xdot)
             h, c = hs[0], cs[0]
         x, xdot = self._propagate(x, xdot, self.T - t)
-        print(f"Final x: ({x[0,0]}, {x[1,0]})")
-        print(f"Final xdot: ({xdot[0,0]}, {xdot[1,0]})")
         if verbose:
             print(f"\tNumber of collision checks: {i}")
         if not self._constraints_satisfied(x):
