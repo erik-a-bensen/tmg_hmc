@@ -130,4 +130,4 @@ class QuadraticConstraint(Constraint):
         s7 = soln7(*qs) + pis
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
-        return np.unique(s[s > eps])
+        return np.unique(s[s > 1e-8])
