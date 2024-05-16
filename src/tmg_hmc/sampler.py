@@ -167,5 +167,5 @@ class TMGSampler:
             x = self._iterate(x, xdot, verbose)
             samples[i,:] = (self.Sigma_half@x).flatten() + self.mu.flatten()
         if verbose:
-            print(f"Rejection rate: {self.rejections/n_samples}")
+            print(f"Rejection rate: {self.rejections/n_samples*100} %")
         return samples
