@@ -39,8 +39,7 @@ class TMGSampler:
         else:
             A = np.zeros((self.dim, self.dim))
         
-        if sparse:
-            A = csc_matrix(A)
+        A = csc_matrix(A)
 
         A_new = S @ A @ S
         f_new = 2*S @ A @ mu + S @ f
@@ -49,6 +48,12 @@ class TMGSampler:
         nonzero_A = np.any(A_new != 0)
         nonzero_f = np.any(f_new != 0)
         del A, f
+        if sparse:
+            sparse_entries = np.sum(A_new == 0)
+            # print(f"Fraction of zero entries in A_new: {sparse_entries / (self.dim**2)}")
+            A_new = csc_matrix(A_new)
+            # print size in GB 
+            # print(f"Size of A_new: {A_new.data.nbytes/1e9} GB")
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
