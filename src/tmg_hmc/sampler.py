@@ -13,7 +13,7 @@ class TMGSampler:
         self.mu = mu.reshape(self.dim, 1)
         self.T = T
         self.constraints = []
-
+        self.rejections = 0
         # Checks 
         if not np.shape(Sigma) == (self.dim, self.dim):
             raise ValueError("Sigma must be a square matrix")
@@ -103,10 +103,19 @@ class TMGSampler:
             return x, xdot, 0, False
         return self._binary_search(x, xdot, 0, h, c)
     
+    def _metropolis_acceptance(self, x_init: np.ndarray, xdot_init: np.ndarray, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
+        efinal = -0.5*x.T @ x - 0.5*xdot.T @ xdot
+        einit = -0.5*x_init.T @ x_init - 0.5*xdot_init.T @ xdot_init
+        ratio = np.exp(efinal - einit) if self._constraints_satisfied(x) else 0
+        if np.random.rand() < ratio:
+            return x
+        self.rejections += 1
+        return x_init
+    
     def _iterate(self, x: np.ndarray, xdot: np.ndarray, verbose: bool) -> np.ndarray:
         t = 0 
         i = 0
-        x_init = x
+        x_init, xdot_init = x, xdot
         hs, cs = self._hit_times(x, xdot)
         h, c = hs[0], cs[0]
         while h < self.T - t:
@@ -133,10 +142,7 @@ class TMGSampler:
         x, xdot = self._propagate(x, xdot, self.T - t)
         if verbose:
             print(f"\tNumber of collision checks: {i}")
-        if not self._constraints_satisfied(x):
-            print(f"Error at final step")
-            return x_init
-        return x
+        return self._metropolis_acceptance(x_init, xdot_init, x, xdot)
     
     def sample_xdot(self) -> np.ndarray:
         return np.random.standard_normal(self.dim).reshape(self.dim, 1)
@@ -148,6 +154,7 @@ class TMGSampler:
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
         x = x0
+        self.refections = 0
         for i in range(burn_in):
             if verbose:
                 print(f"burn-in iteration: {i+1} of {burn_in}")
@@ -159,4 +166,6 @@ class TMGSampler:
             xdot = self.sample_xdot()
             x = self._iterate(x, xdot, verbose)
             samples[i,:] = (self.Sigma_half@x).flatten() + self.mu.flatten()
+        if verbose:
+            print(f"Rejection rate: {self.rejections/n_samples}")
         return samples
