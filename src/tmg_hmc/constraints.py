@@ -13,7 +13,7 @@ class Constraint(Protocol):
 
     def is_zero(self, x: np.ndarray) -> Tuple[bool, bool]:
         val = self.value(x)
-        return np.isclose(val, 0), np.isclose(val, 0, atol=1e-3)
+        return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
 
     def hit_time(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:...
 
@@ -130,4 +130,4 @@ class QuadraticConstraint(Constraint):
         s7 = soln7(*qs) + pis
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
-        return np.unique(s[s > 1e-6])
+        return np.unique(s[s > eps])

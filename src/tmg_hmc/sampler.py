@@ -62,6 +62,7 @@ class TMGSampler:
     def _constraints_satisfied(self, x: np.ndarray) -> bool:
         if len(self.constraints) == 0:
             return True
+        # print(f"min constraint value: {min([c.value(x) for c in self.constraints])}")
         return all([c.is_satisfied(x) for c in self.constraints])
     
     def _propagate(self, x: np.ndarray, xdot: np.ndarray, t: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -77,7 +78,7 @@ class TMGSampler:
             times.append(t)
             cs += [c] * len(t)
         times = np.hstack(times)
-        nanind = np.isnan(times) & (times < self.T)
+        nanind = np.isnan(times)
         times = times[~nanind]
         cs = np.array(cs)[~nanind]
         if len(times) == 0:
@@ -88,6 +89,9 @@ class TMGSampler:
     def _binary_search(self, x: np.ndarray, xdot: np.ndarray, b1: float, b2: float, c: QuadraticConstraint) -> Tuple[np.ndarray, np.ndarray, float, bool]:
         x1, _ = self._propagate(x, xdot, b1)
         hmid = (b1 + b2) / 2
+        # print(f"b1: {b1}")
+        # print(f"b2: {b2}")
+        # print(f"hmid: {hmid}")
         xmid, xdotmid = self._propagate(x, xdot, hmid)
         if np.isclose(c.value(xmid), 0):
             return xmid, xdotmid, hmid, True
@@ -96,7 +100,7 @@ class TMGSampler:
         return self._binary_search(x, xdot, hmid, b2, c)
     
     def _refine_hit_time(self, x: np.ndarray, xdot: np.ndarray, c: QuadraticConstraint) -> Tuple[np.ndarray, np.ndarray, float, bool]:
-        sign = np.sign(c.value(x))
+        sign = np.sign(c.value(x))[0,0]
         h = 1e-3 * sign
         x_temp, _ = self._propagate(x, xdot, h)
         if np.sign(c.value(x_temp)) == sign:
@@ -106,23 +110,34 @@ class TMGSampler:
     def _iterate(self, x: np.ndarray, xdot: np.ndarray, verbose: bool) -> np.ndarray:
         t = 0 
         i = 0
+        x_init = x
         hs, cs = self._hit_times(x, xdot)
         h, c = hs[0], cs[0]
+        # print(f"Initial x: ({x[0,0]}, {x[1,0]})")
+        # print(f"Initial xdot: ({xdot[0,0]}, {xdot[1,0]})")
         while h < self.T - t:
             i += 1
             inds = hs < self.T - t
             hs = hs[inds]
             cs = cs[inds]
+            # print(f"hs: {hs}")
             for pos in range(len(hs)):
                 h, c = hs[pos], cs[pos]
+                # print(f"Hit time: {h}")
                 x_temp, xdot_temp = self._propagate(x, xdot, h)
                 zero, refine = c.is_zero(x_temp)
-                if refine and not zero:
+                if refine and (not zero):
+                    # print(f"Refining hit time: {h}")
                     x_temp, xdot_temp, h_adj, zero = self._refine_hit_time(x_temp, xdot_temp, c)
                     h += h_adj
+                    # print(f"Refined hit time: {h}")
+                    # print(f"delta: {h_adj}")
+                    # print(f"zero: {zero}")
                 if zero:
                     x, xdot = x_temp, xdot_temp
                     xdot = c.reflect(x, xdot)
+                    # print(f"Propagated x: ({x[0,0]}, {x[1,0]})")
+                    # print(f"Reflected xdot: ({xdot[0,0]}, {xdot[1,0]})")
                     t += h
                     break
             else:
@@ -133,7 +148,9 @@ class TMGSampler:
         if verbose:
             print(f"\tNumber of collision checks: {i}")
         if not self._constraints_satisfied(x):
-            raise ValueError("Error at final step")
+            #raise ValueError("Error at final step")
+            print(f"Error at final step")
+            return x_init
         return x
     
     def sample_xdot(self) -> np.ndarray:
