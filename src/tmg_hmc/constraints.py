@@ -61,10 +61,15 @@ class SimpleQuadraticConstraint(Constraint):
     """
     Constraint of the form x**T A x + c >= 0
     """
-    def __init__(self, A: np.ndarray, c: float):
+    def __init__(self, A: np.ndarray, c: float, S: np.ndarray):
         # Check that A is symmetric
-        self.A = A
+        self.A_orig = A
+        self.S = S
         self.c = c
+    
+    @property 
+    def A(self):
+        return self.S @ self.A_orig @ self.S
     
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.c
@@ -95,10 +100,15 @@ class QuadraticConstraint(Constraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: np.ndarray, b: np.ndarray, c: float):
-        self.A = A
+    def __init__(self, A: np.ndarray, b: np.ndarray, c: float, S: np.ndarray):
+        self.A_orig = A
         self.b = b
         self.c = c
+        self.S = S
+
+    @property 
+    def A(self):
+        return self.S @ self.A_orig @ self.S
     
     def value(self, x: np.ndarray) -> float:
         return x.T @ self.A @ x + self.b.T @ x + self.c

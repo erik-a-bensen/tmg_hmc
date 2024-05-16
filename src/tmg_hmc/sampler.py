@@ -38,27 +38,20 @@ class TMGSampler:
                 raise ValueError("A must be symmetric")
         else:
             A = np.zeros((self.dim, self.dim))
-        
-        A = csc_matrix(A)
 
-        A_new = S @ A @ S
+        # A_new = S @ A @ S
         f_new = 2*S @ A @ mu + S @ f
         c_new = c + mu.T @ A @ mu + f.T @ mu
 
-        nonzero_A = np.any(A_new != 0)
+        nonzero_A = np.any(A != 0)
         nonzero_f = np.any(f_new != 0)
-        del A, f
-        if sparse:
-            sparse_entries = np.sum(A_new == 0)
-            # print(f"Fraction of zero entries in A_new: {sparse_entries / (self.dim**2)}")
-            A_new = csc_matrix(A_new)
-            # print size in GB 
-            # print(f"Size of A_new: {A_new.data.nbytes/1e9} GB")
+
+        A = csc_matrix(A)
         
         if nonzero_A and nonzero_f:
-            self.constraints.append(QuadraticConstraint(A_new, f_new, c_new))
+            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S))
         elif nonzero_A and (not nonzero_f):
-            self.constraints.append(SimpleQuadraticConstraint(A_new, c_new))
+            self.constraints.append(SimpleQuadraticConstraint(A, c_new, S))
         elif (not nonzero_A) and nonzero_f:
             self.constraints.append(LinearConstraint(f_new, c_new))
         else:
