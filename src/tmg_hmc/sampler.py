@@ -31,22 +31,34 @@ class TMGSampler:
         mu = self.mu
         if f is not None:
             f = f.reshape(self.dim, 1) 
-        else:
-            f = np.zeros((self.dim, 1))
+        # else:
+        #     f = np.zeros((self.dim, 1))
         if A is not None:
             if not np.allclose(A, A.T):
                 raise ValueError("A must be symmetric")
-        else:
-            A = np.zeros((self.dim, self.dim))
+        # else:
+        #     A = np.zeros((self.dim, self.dim))
 
+        if (A is not None) and sparse:
+            A = csc_matrix(A)
+        if (f is not None) and sparse:
+            f = csc_matrix(f)
+        
         # A_new = S @ A @ S
-        f_new = 2*S @ A @ mu + S @ f
-        c_new = c + mu.T @ A @ mu + f.T @ mu
+        if (A is not None) and (f is not None):
+            f_new = 2*S @ A @ mu + S @ f
+            c_new = c + mu.T @ A @ mu + f.T @ mu
+        elif (A is not None) and (f is None):
+            f_new = 2*S @ A @ mu
+            c_new = c + mu.T @ A @ mu
+        elif (A is None) and (f is not None):
+            f_new = S @ f
+            c_new = c + f.T @ mu
+        else:
+            raise ValueError("Must provide either A or f")
 
-        nonzero_A = np.any(A != 0)
+        nonzero_A = A is not None#np.any(A != 0)
         nonzero_f = np.any(f_new != 0)
-
-        A = csc_matrix(A)
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A, f_new, c_new, S))
@@ -54,8 +66,6 @@ class TMGSampler:
             self.constraints.append(SimpleQuadraticConstraint(A, c_new, S))
         elif (not nonzero_A) and nonzero_f:
             self.constraints.append(LinearConstraint(f_new, c_new))
-        else:
-            raise ValueError("Must provide either A or f")
             
     def _constraints_satisfied(self, x: np.ndarray) -> bool:
         if len(self.constraints) == 0:
