@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 from typing import Tuple
 from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
 
@@ -10,7 +10,7 @@ class TMGSampler:
     """
     def __init__(self, mu: np.ndarray, Sigma: np.ndarray, T: float = np.pi/2) -> None:
         self.dim = len(mu)
-        self.mu = mu.reshape(self.dim, 1)
+        self.mu = mu.reshape(self.dim, 1).astype(np.float32)
         self.T = T
         self.constraints = []
         self.rejections = 0
@@ -20,8 +20,9 @@ class TMGSampler:
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
         print(f"Checking positive semi-definiteness of Sigma...")
-        eps = 1e-12 # Tolerance for positive semi-definiteness
-        s, V = np.linalg.eigh(Sigma + eps * np.eye(self.dim))
+        eps = 1e-6 # Tolerance for positive semi-definiteness
+        Sigma = (Sigma + eps * np.eye(self.dim)).astype(np.float32)
+        s, V = np.linalg.eigh(Sigma)
         if not np.all(s >= 0):
             raise ValueError("Sigma must be positive semi-definite")
         self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
@@ -40,20 +41,24 @@ class TMGSampler:
         #     A = np.zeros((self.dim, self.dim))
 
         if (A is not None) and sparse:
-            A = csc_matrix(A)
+            A = csr_matrix(A)
         if (f is not None) and sparse:
             f = csc_matrix(f)
         
         # A_new = S @ A @ S
         if (A is not None) and (f is not None):
-            f_new = 2*S @ A @ mu + S @ f
-            c_new = c + mu.T @ A @ mu + f.T @ mu
+            Amu = A @ mu
+            f_new = S @ Amu * 2 + S @ f
+            c_new = c + mu.T @ Amu + mu.T @ f
         elif (A is not None) and (f is None):
-            f_new = 2*S @ A @ mu
-            c_new = c + mu.T @ A @ mu
+            Amu = A @ mu
+            #f_new = 2*S @ A @ mu
+            f_new = S @ Amu * 2
+            #c_new = c + mu.T @ A @ mu
+            c_new = mu.T @ Amu + c
         elif (A is None) and (f is not None):
             f_new = S @ f
-            c_new = c + f.T @ mu
+            c_new = c + mu.T @ f
         else:
             raise ValueError("Must provide either A or f")
 
@@ -157,7 +162,7 @@ class TMGSampler:
             
     def sample(self, x0: np.ndarray, n_samples: int, burn_in: int = 100, verbose=False) -> np.ndarray:
         x0 = x0.reshape(self.dim, 1)
-        x0 = np.linalg.inv(self.Sigma_half) @ (x0 - self.mu)
+        x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
         if not self._constraints_satisfied(x0):
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
