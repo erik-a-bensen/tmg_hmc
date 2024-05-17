@@ -78,6 +78,8 @@ class TMGSampler:
         return xnew, xdotnew
     
     def _hit_times(self, x: np.ndarray, xdot: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        if len(self.constraints) == 0:
+            return np.array([np.nan]), np.array([None])
         times = []
         cs = []
         for c in self.constraints:
