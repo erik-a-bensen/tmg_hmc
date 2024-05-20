@@ -1,7 +1,8 @@
 import numpy as np
 from typing import Protocol, Tuple
 from torch import Tensor
-from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8, Array
+from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
+                           soln6, soln7, soln8, Array, to_scalar)
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
@@ -35,21 +36,15 @@ class LinearConstraint(Constraint):
         self.c = c
     
     def value(self, x: Array) -> float:
-        return self.f.T @ x + self.c
+        return to_scalar(self.f.T @ x + self.c)
 
     def normal(self, x: Array) -> Array:
         return self.f
 
     def compute_q(self, a, b) -> Tuple[float, float]:
         f = self.f
-        q1 = f.T @ a 
-        q2 = f.T @ b
-        if isinstance(q1, Tensor):
-            q1 = q1.item()
-            q2 = q2.item()
-        else:
-            q1 = q1[0,0]
-            q2 = q2[0,0]
+        q1 = to_scalar(f.T @ a)
+        q2 = to_scalar(f.T @ b)
         return q1, q2
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
@@ -79,7 +74,7 @@ class SimpleQuadraticConstraint(Constraint):
         return self.S @ self.A_orig @ self.S
     
     def value(self, x: Array) -> float:
-        return x.T @ self.A @ x + self.c
+        return to_scalar(x.T @ self.A @ x + self.c)
 
     def normal(self, x: Array) -> Array:
         return 2 * self.A @ x
@@ -87,17 +82,9 @@ class SimpleQuadraticConstraint(Constraint):
     def compute_q(self, a, b) -> Tuple[float, float, float]:
         A = self.A
         c = self.c
-        q1 = b.T @ A @ b - a.T @ A @ a
-        q3 = c + a.T @ A @ a
-        q4 = 2 * a.T @ A @ b
-        if isinstance(q1, Tensor):
-            q1 = q1.item()
-            q3 = q3.item()
-            q4 = q4.item()
-        else:
-            q1 = q1[0,0]
-            q3 = q3[0,0]
-            q4 = q4[0,0]
+        q1 = to_scalar(b.T @ A @ b - a.T @ A @ a)
+        q3 = c + to_scalar(a.T @ A @ a)
+        q4 = to_scalar(2 * a.T @ A @ b)
         return q1, q3, q4
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
@@ -126,7 +113,7 @@ class QuadraticConstraint(Constraint):
         return self.S @ self.A_orig @ self.S
     
     def value(self, x: Array) -> float:
-        return x.T @ self.A @ x + self.b.T @ x + self.c
+        return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
 
     def normal(self, x: Array) -> Array:
         return 2 * self.A @ x + self.b
@@ -135,23 +122,11 @@ class QuadraticConstraint(Constraint):
         A = self.A
         B = self.b
         c = self.c
-        q1 = b.T @ A @ b - a.T @ A @ a
-        q2 = B.T @ b
-        q3 = c + a.T @ A @ a
-        q4 = 2 * a.T @ A @ b
-        q5 = B.T @ a
-        if isinstance(q1, Tensor):
-            q1 = q1.item()
-            q2 = q2.item()
-            q3 = q3.item()
-            q4 = q4.item()
-            q5 = q5.item()
-        else:
-            q1 = q1[0,0]
-            q2 = q2[0,0]
-            q3 = q3[0,0]
-            q4 = q4[0,0]
-            q5 = q5[0,0]
+        q1 = to_scalar(b.T @ A @ b - a.T @ A @ a)
+        q2 = to_scalar(B.T @ b)
+        q3 = c + to_scalar(a.T @ A @ a)
+        q4 = to_scalar(2 * a.T @ A @ b)
+        q5 = to_scalar(B.T @ a)
         return q1, q2, q3, q4, q5
 
     def hit_time(self, x: Array, xdot: Array) -> Array:

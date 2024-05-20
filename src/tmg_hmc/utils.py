@@ -12,6 +12,11 @@ def sparsify(A: Array) -> Array:
         return csc_matrix(A)
     elif isinstance(A, Tensor):
         return A.to_sparse_csc()
+    
+def to_scalar(x: Array) -> float:
+    if isinstance(x, Tensor):
+        return x.item()
+    return x[0,0]
 
 def arccos(x: float) -> float:
     val = acos(x)

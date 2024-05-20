@@ -80,6 +80,10 @@ class TMGSampler:
 
         nonzero_A = A is not None
         nonzero_f = torch.any(f_new != 0) if self.gpu else np.any(f_new != 0)
+        if self.gpu:
+            c_new = c_new.item()
+        else:
+            c_new = c_new[0,0]
         
         if nonzero_A and nonzero_f:
             self.constraints.append(QuadraticConstraint(A, f_new, c_new, S))
