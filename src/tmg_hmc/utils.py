@@ -1,8 +1,17 @@
 import numpy as np 
-# from numpy import arccos
 from cmath import sqrt, acos
+from scipy.sparse import csc_matrix, csr_matrix
+from torch import Tensor
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
+
+Array = np.ndarray | Tensor
+
+def sparsify(A: Array) -> Array:
+    if isinstance(A, np.ndarray):
+        return csc_matrix(A)
+    elif isinstance(A, Tensor):
+        return A.to_sparse_csc()
 
 def arccos(x: float) -> float:
     val = acos(x)

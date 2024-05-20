@@ -1,25 +1,25 @@
 import numpy as np
 from typing import Protocol, Tuple
-from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
+from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8, Array
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
 
 class Constraint(Protocol):
-    def value(self, x: np.ndarray) -> float:...
+    def value(self, x: Array) -> float:...
         
-    def is_satisfied(self, x: np.ndarray) -> bool:
+    def is_satisfied(self, x: Array) -> bool:
         return self.value(x) >= 0 
 
-    def is_zero(self, x: np.ndarray) -> Tuple[bool, bool]:
+    def is_zero(self, x: Array) -> Tuple[bool, bool]:
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
 
-    def hit_time(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:...
+    def hit_time(self, a: Array, b: Array) -> Array:...
 
-    def normal(self, x: np.ndarray) -> np.ndarray:...
+    def normal(self, x: Array) -> Array:...
 
-    def reflect(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
+    def reflect(self, x: Array, xdot: Array) -> Array:
         f = self.normal(x)
         norm = np.sqrt(f.T @ f)[0,0]
         f = f / norm
@@ -29,14 +29,14 @@ class LinearConstraint(Constraint):
     """
     Constraint of the form fx + c >= 0
     """
-    def __init__(self, f: np.ndarray, c: float):
+    def __init__(self, f: Array, c: float):
         self.f = f
         self.c = c
     
-    def value(self, x: np.ndarray) -> float:
+    def value(self, x: Array) -> float:
         return self.f.T @ x + self.c
 
-    def normal(self, x: np.ndarray) -> np.ndarray:
+    def normal(self, x: Array) -> Array:
         return self.f
 
     def compute_q(self, a, b) -> Tuple[float, float]:
@@ -45,7 +45,7 @@ class LinearConstraint(Constraint):
         q2 = f.T @ b
         return q1, q2
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
+    def hit_time(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
         q1, q2 = self.compute_q(a, b)
         c = self.c
@@ -61,7 +61,7 @@ class SimpleQuadraticConstraint(Constraint):
     """
     Constraint of the form x**T A x + c >= 0
     """
-    def __init__(self, A: np.ndarray, c: float, S: np.ndarray):
+    def __init__(self, A: Array, c: float, S: Array):
         # Check that A is symmetric
         self.A_orig = A
         self.S = S
@@ -71,10 +71,10 @@ class SimpleQuadraticConstraint(Constraint):
     def A(self):
         return self.S @ self.A_orig @ self.S
     
-    def value(self, x: np.ndarray) -> float:
+    def value(self, x: Array) -> float:
         return x.T @ self.A @ x + self.c
 
-    def normal(self, x: np.ndarray) -> np.ndarray:
+    def normal(self, x: Array) -> Array:
         return 2 * self.A @ x
 
     def compute_q(self, a, b) -> Tuple[float, float, float]:
@@ -85,7 +85,7 @@ class SimpleQuadraticConstraint(Constraint):
         q4 = 2 * a.T @ A @ b
         return q1, q3, q4
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
+    def hit_time(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         u = np.sqrt(q1**2 + q4**2)
@@ -100,7 +100,7 @@ class QuadraticConstraint(Constraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: np.ndarray, b: np.ndarray, c: float, S: np.ndarray):
+    def __init__(self, A: Array, b: Array, c: float, S: Array):
         self.A_orig = A
         self.b = b
         self.c = c
@@ -110,10 +110,10 @@ class QuadraticConstraint(Constraint):
     def A(self):
         return self.S @ self.A_orig @ self.S
     
-    def value(self, x: np.ndarray) -> float:
+    def value(self, x: Array) -> float:
         return x.T @ self.A @ x + self.b.T @ x + self.c
 
-    def normal(self, x: np.ndarray) -> np.ndarray:
+    def normal(self, x: Array) -> Array:
         return 2 * self.A @ x + self.b
 
     def compute_q(self, a, b) -> Tuple[float, float, float, float, float]:
@@ -127,7 +127,7 @@ class QuadraticConstraint(Constraint):
         q5 = B.T @ a
         return q1[0,0], q2[0,0], q3[0,0], q4[0,0], q5[0,0]
 
-    def hit_time(self, x: np.ndarray, xdot: np.ndarray) -> np.ndarray:
+    def hit_time(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
         pis = np.array([-2, 0, 2])*np.pi
         qs = self.compute_q(a, b)
