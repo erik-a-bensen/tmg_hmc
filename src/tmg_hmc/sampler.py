@@ -137,6 +137,9 @@ class TMGSampler:
     def _metropolis_acceptance(self, x_init: Array, xdot_init: Array, x: Array, xdot: Array) -> Array:
         efinal = -0.5*x.T @ x - 0.5*xdot.T @ xdot
         einit = -0.5*x_init.T @ x_init - 0.5*xdot_init.T @ xdot_init
+        if self.gpu:
+            efinal = efinal.item()
+            einit = einit.item()
         ratio = np.exp(efinal - einit) if self._constraints_satisfied(x) else 0
         if np.random.rand() < ratio:
             return x
@@ -176,11 +179,18 @@ class TMGSampler:
         return self._metropolis_acceptance(x_init, xdot_init, x, xdot)
     
     def sample_xdot(self) -> Array:
-        return np.random.standard_normal(self.dim).reshape(self.dim, 1)
+        if self.gpu:
+            return torch.randn(self.dim, 1, dtype=torch.float64).cuda()
+        else:
+            return np.random.standard_normal(self.dim).reshape(self.dim, 1)
             
     def sample(self, x0: Array, n_samples: int, burn_in: int = 100, verbose=False) -> Array:
         x0 = x0.reshape(self.dim, 1)
-        x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
+        if self.gpu:
+            x0 = torch.tensor(x0).cuda()
+            x0 = torch.linalg.solve(self.Sigma_half, x0 - self.mu)
+        else:
+            x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
         if not self._constraints_satisfied(x0):
             raise ValueError("Initial point does not satisfy constraints")
         samples = np.zeros((n_samples, self.dim))
@@ -196,7 +206,10 @@ class TMGSampler:
                 print(f"sample iteration: {i+1} of {n_samples}")
             xdot = self.sample_xdot()
             x = self._iterate(x, xdot, verbose)
-            samples[i,:] = (self.Sigma_half @ x).flatten() + self.mu.flatten()
+            correlated_x = (self.Sigma_half @ x).flatten() + self.mu.flatten()
+            if self.gpu:
+                correlated_x = correlated_x.cpu().numpy()
+            samples[i,:] = correlated_x
         if verbose:
             print(f"Rejection rate: {self.rejections/n_samples*100} %")
         return samples

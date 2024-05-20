@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Protocol, Tuple
+from torch import Tensor
 from tmg_hmc.utils import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8, Array
 
 pis = np.array([-1, 0, 1]) * np.pi
@@ -43,6 +44,12 @@ class LinearConstraint(Constraint):
         f = self.f
         q1 = f.T @ a 
         q2 = f.T @ b
+        if isinstance(q1, Tensor):
+            q1 = q1.item()
+            q2 = q2.item()
+        else:
+            q1 = q1[0,0]
+            q2 = q2[0,0]
         return q1, q2
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
@@ -83,6 +90,14 @@ class SimpleQuadraticConstraint(Constraint):
         q1 = b.T @ A @ b - a.T @ A @ a
         q3 = c + a.T @ A @ a
         q4 = 2 * a.T @ A @ b
+        if isinstance(q1, Tensor):
+            q1 = q1.item()
+            q3 = q3.item()
+            q4 = q4.item()
+        else:
+            q1 = q1[0,0]
+            q3 = q3[0,0]
+            q4 = q4[0,0]
         return q1, q3, q4
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
@@ -125,7 +140,19 @@ class QuadraticConstraint(Constraint):
         q3 = c + a.T @ A @ a
         q4 = 2 * a.T @ A @ b
         q5 = B.T @ a
-        return q1[0,0], q2[0,0], q3[0,0], q4[0,0], q5[0,0]
+        if isinstance(q1, Tensor):
+            q1 = q1.item()
+            q2 = q2.item()
+            q3 = q3.item()
+            q4 = q4.item()
+            q5 = q5.item()
+        else:
+            q1 = q1[0,0]
+            q2 = q2[0,0]
+            q3 = q3[0,0]
+            q4 = q4[0,0]
+            q5 = q5[0,0]
+        return q1, q2, q3, q4, q5
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
