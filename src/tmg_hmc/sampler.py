@@ -17,11 +17,11 @@ class TMGSampler:
         self.rejections = 0
         self.gpu = gpu
         
-        self._setup_sigma()
+        self._setup_sigma(Sigma)
         if self.gpu:
             self.mu = torch.tensor(self.mu).cuda()
             
-    def _setup_sigma(self) -> None:
+    def _setup_sigma(self, Sigma: Array) -> None:
         if not np.shape(Sigma) == (self.dim, self.dim):
             raise ValueError("Sigma must be a square matrix")
         if not np.allclose(Sigma, Sigma.T):
@@ -33,12 +33,13 @@ class TMGSampler:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
             all_positive = torch.all(s >= 0)
+            self.Sigma_half = V @ torch.diag(torch.sqrt(s)) @ V.T
         else:
             s, V = np.linalg.eigh(Sigma)
             all_positive = np.all(s >= 0)
+            self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         if not all_positive:
             raise ValueError("Sigma must be positive semi-definite")
-        self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         
     def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True) -> None:
         S = self.Sigma_half
