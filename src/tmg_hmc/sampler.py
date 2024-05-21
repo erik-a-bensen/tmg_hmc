@@ -131,7 +131,7 @@ class TMGSampler:
         return self._binary_search(x, xdot, hmid, b2, c)
     
     def _refine_hit_time(self, x: Array, xdot: Array, c: QuadraticConstraint) -> Tuple[Array, Array, float, bool]:
-        sign = np.sign(c.value(x))[0,0]
+        sign = np.sign(c.value(x))
         h = 1e-3 * sign
         x_temp, _ = self._propagate(x, xdot, h)
         if np.sign(c.value(x_temp)) == sign:
