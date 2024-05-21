@@ -120,6 +120,8 @@ class SimpleQuadraticConstraint(Constraint):
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         u = np.sqrt(q1**2 + q4**2)
+        if (u == 0) or (q4 == 0): # No intersection
+            return np.array([np.nan])
         s1 = (np.pi + np.arcsin((q1+2*q3)/u) -
               np.arctan(q1/q4) + pis) / 2 
         s2 = (-np.arcsin((q1+2*q3)/u) -
