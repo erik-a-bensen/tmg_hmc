@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Protocol, Tuple
-from torch import Tensor
+import torch
 from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
                            soln6, soln7, soln8, Array, to_scalar)
 
@@ -23,7 +23,10 @@ class Constraint(Protocol):
 
     def reflect(self, x: Array, xdot: Array) -> Array:
         f = self.normal(x)
-        norm = np.sqrt(f.T @ f)[0,0]
+        if isinstance(xdot, torch.Tensor):
+            norm = torch.sqrt(f.T @ f)
+        else:
+            norm = np.sqrt(f.T @ f)
         f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
 
