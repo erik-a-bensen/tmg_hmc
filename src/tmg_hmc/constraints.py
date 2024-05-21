@@ -35,7 +35,7 @@ class Constraint(Protocol):
         d = self.__dict__.copy()
         for k, v in d.items():
             if isinstance(v, torch.Tensor):
-                d[k] = v.cpu().numpy()
+                d[k] = v.cpu()
         d['type'] = self.__class__.__name__
         return d
     
@@ -43,8 +43,8 @@ class Constraint(Protocol):
     def deserialize(cls, d: dict, gpu: bool) -> Constraint:
         if gpu:
             for k, v in d.items():
-                if isinstance(v, np.ndarray):
-                    d[k] = torch.tensor(v).cuda()
+                if isinstance(v, torch.Tensor):
+                    d[k] = v.cuda()
         if d['type'] == 'LinearConstraint':
             return LinearConstraint(d['f'], d['c'])
         elif d['type'] == 'SimpleQuadraticConstraint':
