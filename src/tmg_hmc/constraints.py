@@ -1,5 +1,6 @@
+from __future__ import annotations
 import numpy as np
-from typing import Protocol, Tuple
+from typing import Protocol, Tuple, Dict
 import torch
 from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
                            soln6, soln7, soln8, Array, to_scalar)
@@ -29,6 +30,31 @@ class Constraint(Protocol):
             norm = np.sqrt(f.T @ f)
         f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
+
+    def serialize(self):
+        d = self.__dict__
+        for k, v in d.items():
+            if isinstance(v, torch.Tensor):
+                d[k] = v.cpu().numpy()
+        d['type'] = self.__class__.__name__
+        return dict 
+    
+    @classmethod
+    def deserialize(cls, d: Dict, gpu: bool) -> Constraint:
+        if gpu:
+            for k, v in d.items():
+                if isinstance(v, np.ndarray):
+                    d[k] = torch.tensor(v).cuda()
+        if dict['type'] == 'LinearConstraint':
+            return LinearConstraint(dict['f'], dict['c'])
+        elif dict['type'] == 'SimpleQuadraticConstraint':
+            return SimpleQuadraticConstraint(dict['A'], dict['c'], dict['S'])
+        elif dict['type'] == 'QuadraticConstraint':
+            return QuadraticConstraint(dict['A'], dict['b'], dict['c'], dict['S'])
+        else:
+            raise ValueError(f"Unknown constraint type {dict['type']}")
+    
+    
 
 class LinearConstraint(Constraint):
     """

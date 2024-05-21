@@ -1,23 +1,32 @@
+from __future__ import annotations
 import numpy as np
 from typing import Tuple
 from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
 from tmg_hmc.utils import Array, sparsify
 import torch
+import pickle
 
 class TMGSampler:
     """
     Hamiltonian Monte Carlo sampler for Multivariate Gaussian distributions
     with linear and quadratic constraints.
     """
-    def __init__(self, mu: Array, Sigma: Array, T: float = np.pi/2, gpu: bool = False) -> None:
-        self.dim = len(mu)
+    def __init__(self, mu: Array = None, Sigma: Array = None, T: float = np.pi/2, gpu: bool = False,*,Sigma_half: Array = None) -> None:
+        if Sigma is None and Sigma_half is None:
+            raise ValueError("Must provide either Sigma or Sigma_half")
+        self.dim = len(Sigma) if Sigma is not None else len(Sigma_half)
+        if mu is None:
+            mu = np.zeros(self.dim)
         self.mu = mu.reshape(self.dim, 1)
         self.T = T
         self.constraints = []
         self.rejections = 0
         self.gpu = gpu
         
-        self._setup_sigma(Sigma)
+        if Sigma_half is not None:
+            self._setup_sigma_half(Sigma_half)
+        else:
+            self._setup_sigma(Sigma)
         if self.gpu:
             self.mu = torch.tensor(self.mu).cuda()
             
@@ -40,6 +49,13 @@ class TMGSampler:
             self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         if not all_positive:
             raise ValueError("Sigma must be positive semi-definite")
+        
+    def _setup_sigma_half(self, Sigma_half: Array) -> None:
+        if not np.shape(Sigma_half) == (self.dim, self.dim):
+            raise ValueError("Sigma_half must be a square matrix")
+        if not np.allclose(Sigma, Sigma.T):
+            raise ValueError("Sigma_half must be symmetric")
+        self.Sigma_half = torch.tensor(Sigma_half).cuda() if self.gpu else Sigma_half
         
     def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True) -> None:
         S = self.Sigma_half
@@ -217,3 +233,25 @@ class TMGSampler:
         if verbose:
             print(f"Rejection rate: {self.rejections/n_samples*100} %")
         return samples
+
+    def save(self, filename: str) -> None:
+        d = self.__dict__.copy()
+        d['constraints'] = [c.serialize() for c in d['constraints']]
+        if self.gpu:
+            d['mu'] = d['mu'].cpu().numpy()
+            d['Sigma_half'] = d['Sigma_half'].cpu().numpy()
+        with open(filename, 'wb') as f:
+            pickle.dump(d, f)
+
+    @classmethod
+    def load(cls, filename: str) -> TMGSampler:
+        with open(filename, 'rb') as f:
+            d = pickle.load(f)
+        gpu = d['gpu']
+        if gpu:
+            d['mu'] = torch.tensor(d['mu']).cuda()
+            d['Sigma_half'] = torch.tensor(d['Sigma_half']).cuda()
+        d['constraints'] = [Constraint.deserialize(c, gpu) for c in d['constraints']]
+        sampler = cls(mu=d['mu'], Sigma_half=d['Sigma_half'], T=d['T'], gpu=gpu)
+        sampler.constraints = d['constraints']
+        return sampler
