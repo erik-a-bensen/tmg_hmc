@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Protocol, Tuple, Dict
+from typing import Protocol, Tuple
 import torch
 from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
                            soln6, soln7, soln8, Array, to_scalar)
@@ -31,28 +31,28 @@ class Constraint(Protocol):
         f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
 
-    def serialize(self):
-        d = self.__dict__
+    def serialize(self) -> dict:
+        d = self.__dict__.copy()
         for k, v in d.items():
             if isinstance(v, torch.Tensor):
                 d[k] = v.cpu().numpy()
         d['type'] = self.__class__.__name__
-        return dict 
+        return d
     
     @classmethod
-    def deserialize(cls, d: Dict, gpu: bool) -> Constraint:
+    def deserialize(cls, d: dict, gpu: bool) -> Constraint:
         if gpu:
             for k, v in d.items():
                 if isinstance(v, np.ndarray):
                     d[k] = torch.tensor(v).cuda()
-        if dict['type'] == 'LinearConstraint':
-            return LinearConstraint(dict['f'], dict['c'])
-        elif dict['type'] == 'SimpleQuadraticConstraint':
-            return SimpleQuadraticConstraint(dict['A'], dict['c'], dict['S'])
-        elif dict['type'] == 'QuadraticConstraint':
-            return QuadraticConstraint(dict['A'], dict['b'], dict['c'], dict['S'])
+        if d['type'] == 'LinearConstraint':
+            return LinearConstraint(d['f'], d['c'])
+        elif d['type'] == 'SimpleQuadraticConstraint':
+            return SimpleQuadraticConstraint(d['A_orig'], d['c'], d['S'])
+        elif d['type'] == 'QuadraticConstraint':
+            return QuadraticConstraint(d['A_orig'], d['b'], d['c'], d['S'])
         else:
-            raise ValueError(f"Unknown constraint type {dict['type']}")
+            raise ValueError(f"Unknown constraint type {d['type']}")
     
     
 

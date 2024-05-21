@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Tuple
-from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
+from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
 from tmg_hmc.utils import Array, sparsify
 import torch
 import pickle
@@ -53,7 +53,7 @@ class TMGSampler:
     def _setup_sigma_half(self, Sigma_half: Array) -> None:
         if not np.shape(Sigma_half) == (self.dim, self.dim):
             raise ValueError("Sigma_half must be a square matrix")
-        if not np.allclose(Sigma, Sigma.T):
+        if not np.allclose(Sigma_half, Sigma_half.T):
             raise ValueError("Sigma_half must be symmetric")
         self.Sigma_half = torch.tensor(Sigma_half).cuda() if self.gpu else Sigma_half
         
@@ -247,11 +247,7 @@ class TMGSampler:
     def load(cls, filename: str) -> TMGSampler:
         with open(filename, 'rb') as f:
             d = pickle.load(f)
-        gpu = d['gpu']
-        if gpu:
-            d['mu'] = torch.tensor(d['mu']).cuda()
-            d['Sigma_half'] = torch.tensor(d['Sigma_half']).cuda()
-        d['constraints'] = [Constraint.deserialize(c, gpu) for c in d['constraints']]
-        sampler = cls(mu=d['mu'], Sigma_half=d['Sigma_half'], T=d['T'], gpu=gpu)
+        d['constraints'] = [Constraint.deserialize(c, d['gpu']) for c in d['constraints']]
+        sampler = cls(mu=d['mu'], Sigma_half=d['Sigma_half'], T=d['T'], gpu=d['gpu'])
         sampler.constraints = d['constraints']
         return sampler
