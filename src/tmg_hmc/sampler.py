@@ -215,7 +215,7 @@ class TMGSampler:
                 x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
             if not self._constraints_satisfied(x0):
                 raise ValueError("Initial point does not satisfy constraints")
-            self.x = x0
+            x = x0
             self.rejections = 0
             for i in range(burn_in):
                 if verbose:
@@ -232,7 +232,7 @@ class TMGSampler:
                 print(f"sample iteration: {i+1} of {n_samples}")
             xdot = self.sample_xdot()
             self.x = self._iterate(self.x, xdot, verbose)
-            correlated_x = (self.Sigma_half @ x).flatten() + self.mu.flatten()
+            correlated_x = (self.Sigma_half @ self.x).flatten() + self.mu.flatten()
             if self.gpu:
                 correlated_x = correlated_x.cpu().numpy()
             samples[i,:] = correlated_x
