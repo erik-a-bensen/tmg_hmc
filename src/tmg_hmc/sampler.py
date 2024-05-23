@@ -22,6 +22,7 @@ class TMGSampler:
         self.constraints = []
         self.rejections = 0
         self.gpu = gpu
+        self.x = None
         
         if Sigma_half is not None:
             self._setup_sigma_half(Sigma_half)
@@ -204,28 +205,33 @@ class TMGSampler:
         else:
             return np.random.standard_normal(self.dim).reshape(self.dim, 1)
             
-    def sample(self, x0: Array, n_samples: int, burn_in: int = 100, verbose=False) -> Array:
-        x0 = x0.reshape(self.dim, 1)
-        if self.gpu:
-            x0 = torch.tensor(x0).cuda()
-            x0 = torch.linalg.solve(self.Sigma_half, x0 - self.mu)
-        else:
-            x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
-        if not self._constraints_satisfied(x0):
-            raise ValueError("Initial point does not satisfy constraints")
+    def sample(self, x0: Array = None, n_samples: int = 100, burn_in: int = 100, verbose=False, cont: bool = False) -> Array:
+        if (not cont) and (x0 is not None):
+            x0 = x0.reshape(self.dim, 1)
+            if self.gpu:
+                x0 = torch.tensor(x0).cuda()
+                x0 = torch.linalg.solve(self.Sigma_half, x0 - self.mu)
+            else:
+                x0 = np.linalg.solve(self.Sigma_half, x0 - self.mu)
+            if not self._constraints_satisfied(x0):
+                raise ValueError("Initial point does not satisfy constraints")
+            self.x = x0
+            self.rejections = 0
+            for i in range(burn_in):
+                if verbose:
+                    print(f"burn-in iteration: {i+1} of {burn_in}")
+                xdot = self.sample_xdot()
+                x = self._iterate(x, xdot, verbose)
+            self.x = x
+        elif (not cont) and (x0 is None):
+            raise ValueError("Must provide initial point if not continuing")
+
         samples = np.zeros((n_samples, self.dim))
-        x = x0
-        self.refections = 0
-        for i in range(burn_in):
-            if verbose:
-                print(f"burn-in iteration: {i+1} of {burn_in}")
-            xdot = self.sample_xdot()
-            x = self._iterate(x, xdot, verbose)
         for i in range(n_samples):
             if verbose:
                 print(f"sample iteration: {i+1} of {n_samples}")
             xdot = self.sample_xdot()
-            x = self._iterate(x, xdot, verbose)
+            self.x = self._iterate(self.x, xdot, verbose)
             correlated_x = (self.Sigma_half @ x).flatten() + self.mu.flatten()
             if self.gpu:
                 correlated_x = correlated_x.cpu().numpy()
@@ -240,6 +246,7 @@ class TMGSampler:
         if self.gpu:
             d['mu'] = d['mu'].cpu().numpy()
             d['Sigma_half'] = d['Sigma_half'].cpu().numpy()
+            d['x'] = d['x'].cpu().numpy()
         with open(filename, 'wb') as f:
             pickle.dump(d, f)
 
@@ -250,4 +257,9 @@ class TMGSampler:
         d['constraints'] = [Constraint.deserialize(c, d['gpu']) for c in d['constraints']]
         sampler = cls(mu=d['mu'], Sigma_half=d['Sigma_half'], T=d['T'], gpu=d['gpu'])
         sampler.constraints = d['constraints']
+        if d['x'] is not None:
+            if d['gpu']:
+                sampler.x = torch.tensor(d['x']).cuda()
+            else:
+                sampler.x = d['x']
         return sampler
