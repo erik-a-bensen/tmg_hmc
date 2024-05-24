@@ -20,7 +20,7 @@ class TMGSampler:
         self.mu = mu.reshape(self.dim, 1)
         self.T = T
         self.constraints = []
-        self.rejections = 0
+        self.constraint_violations = 0
         self.gpu = gpu
         self.x = None
         
@@ -155,18 +155,6 @@ class TMGSampler:
             return x, xdot, 0, False
         return self._binary_search(x, xdot, 0, h, c)
     
-    def _metropolis_acceptance(self, x_init: Array, xdot_init: Array, x: Array, xdot: Array) -> Array:
-        efinal = -0.5*x.T @ x - 0.5*xdot.T @ xdot
-        einit = -0.5*x_init.T @ x_init - 0.5*xdot_init.T @ xdot_init
-        if self.gpu:
-            efinal = efinal.item()
-            einit = einit.item()
-        ratio = np.exp(efinal - einit) if self._constraints_satisfied(x) else 0
-        if np.random.rand() < ratio:
-            return x
-        self.rejections += 1
-        return x_init
-    
     def _iterate(self, x: Array, xdot: Array, verbose: bool) -> Array:
         t = 0 
         i = 0
@@ -197,7 +185,13 @@ class TMGSampler:
         x, xdot = self._propagate(x, xdot, self.T - t)
         if verbose:
             print(f"\tNumber of collision checks: {i}")
-        return self._metropolis_acceptance(x_init, xdot_init, x, xdot)
+        if self._constraints_satisfied(x):
+            return x
+        self.constraint_violations += 1
+        if verbose:
+            print(f"Constraint violated, redoing iteration")
+        xdot = self.sample_xdot()
+        return self._iterate(x_init, xdot, verbose)
     
     def sample_xdot(self) -> Array:
         if self.gpu:
@@ -216,7 +210,7 @@ class TMGSampler:
             if not self._constraints_satisfied(x0):
                 raise ValueError("Initial point does not satisfy constraints")
             x = x0
-            self.rejections = 0
+            self.constraint_violations = 0
             for i in range(burn_in):
                 if verbose:
                     print(f"burn-in iteration: {i+1} of {burn_in}")
@@ -237,7 +231,7 @@ class TMGSampler:
                 correlated_x = correlated_x.cpu().numpy()
             samples[i,:] = correlated_x
         if verbose:
-            print(f"Rejection rate: {self.rejections/n_samples*100} %")
+            print(f"Constraint violations: {self.constraint_violations}")
         return samples
 
     def save(self, filename: str) -> None:
