@@ -37,19 +37,23 @@ class TMGSampler:
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
         print(f"Checking positive semi-definiteness of Sigma...")
-        eps = 1e-6 # Tolerance for positive semi-definiteness
-        Sigma = Sigma + eps * np.eye(self.dim)
         if self.gpu:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
             all_positive = torch.all(s >= 0)
-            self.Sigma_half = V @ torch.diag(torch.sqrt(s)) @ V.T
         else:
             s, V = np.linalg.eigh(Sigma)
             all_positive = np.all(s >= 0)
-            self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         if not all_positive:
-            raise ValueError("Sigma must be positive semi-definite")
+            min_eig = np.min(s)
+            if abs(min_eig) < 1e-10:
+                s -= 2*min_eig
+            else:
+                raise ValueError("Sigma must be positive semi-definite")
+        if self.gpu:
+            self.Sigma_half = V @ torch.diag(torch.sqrt(s)) @ V.T
+        else:
+            self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
         
     def _setup_sigma_half(self, Sigma_half: Array) -> None:
         if not np.shape(Sigma_half) == (self.dim, self.dim):
