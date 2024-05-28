@@ -221,6 +221,8 @@ class TMGSampler:
                 xdot = self.sample_xdot()
                 x = self._iterate(x, xdot, verbose)
             self.x = x
+            if verbose:
+                print(f"Constraint violations: {self.constraint_violations}")
         elif (not cont) and (x0 is None):
             raise ValueError("Must provide initial point if not continuing")
 
