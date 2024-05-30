@@ -45,7 +45,8 @@ class TMGSampler:
             s, V = np.linalg.eigh(Sigma)
             all_positive = np.all(s >= 0)
         if not all_positive:
-            min_eig = np.min(s)
+            
+            min_eig = torch.min(s) if self.gpu else np.min(s)
             if abs(min_eig) < 1e-10:
                 s -= 2*min_eig
             else:
