@@ -36,7 +36,7 @@ class TMGSampler:
             raise ValueError("Sigma must be a square matrix")
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
-        print(f"Checking positive semi-definiteness of Sigma...")
+        # print(f"Checking positive semi-definiteness of Sigma...")
         if self.gpu:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
