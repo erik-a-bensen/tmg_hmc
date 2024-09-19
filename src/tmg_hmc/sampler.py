@@ -108,9 +108,9 @@ class TMGSampler:
             c_new = c_new[0,0]
         
         if nonzero_A and nonzero_f:
-            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S))
+            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S, sparse))
         elif nonzero_A and (not nonzero_f):
-            self.constraints.append(SimpleQuadraticConstraint(A, c_new, S))
+            self.constraints.append(SimpleQuadraticConstraint(A, c_new, S, sparse))
         elif (not nonzero_A) and nonzero_f:
             self.constraints.append(LinearConstraint(f_new, c_new))
             
