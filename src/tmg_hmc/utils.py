@@ -1,12 +1,12 @@
 import numpy as np 
 from cmath import sqrt, acos
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
-from torch import Tensor
+from torch import Tensor, sparse_coo
 from typing import TypeAlias, Tuple
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
 
-Array: TypeAlias = np.ndarray | Tensor
+Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
 
 def sparsify(A: Array) -> Array:
     if isinstance(A, np.ndarray):
@@ -17,14 +17,15 @@ def sparsify(A: Array) -> Array:
 def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     if isinstance(A, coo_matrix):
         return A.row, A.col, A.data
-    elif isinstance(A, torch.sparse_coo_tensor):
-        row, col = A.indices()
-        return row, col, A.values()
+    elif isinstance(A, Tensor):
+        if A.layout == sparse_coo:
+            row, col = A.indices()
+            return row, col, A.values()
+        else:
+            row, col = A.nonzero().unbind(1)
+            return row, col, A[row, col]
     elif isinstance(A, np.ndarray):
         row, col = np.nonzero(A)
-        return row, col, A[row, col]
-    elif isinstance(A, Tensor):
-        row, col = A.nonzero().unbind(1)
         return row, col, A[row, col]
     else:
         raise ValueError(f"Unknown type {type(A)}")
