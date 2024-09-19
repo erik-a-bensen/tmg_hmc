@@ -131,7 +131,7 @@ class BaseQuadraticConstraint(Constraint):
     
     def A_dot_x(self, x: Array) -> Array:
         dot_prods = [row @ x for row in self.s_rows]
-        return sum([val * col for val, col in zip(self.s_vals, dot_prods)])
+        return sum([val * dot * col for val, dot, col in zip(self.s_vals, self.s_cols, dot_prods)])
 
     def x_dot_A_dot_x(self, x: Array) -> float:
         return x.T @ self.A_dot_x(x)

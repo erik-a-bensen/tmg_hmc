@@ -15,20 +15,19 @@ def sparsify(A: Array) -> Array:
         return A.to_sparse()
 
 def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
-    match A:
-        case coo_matrix:
-            return A.row, A.col, A.data
-        case torch.sparse_coo_tensor:
-            row, col = A.indices()
-            return row, col, A.values()
-        case np.ndarray:
-            row, col = np.nonzero(A)
-            return row, col, A[row, col]
-        case Tensor:
-            row, col = A.nonzero().unbind(1)
-            return row, col, A[row, col]
-        _:
-            raise ValueError(f"Unknown type {type(A)}")
+    if isinstance(A, coo_matrix):
+        return A.row, A.col, A.data
+    elif isinstance(A, torch.sparse_coo_tensor):
+        row, col = A.indices()
+        return row, col, A.values()
+    elif isinstance(A, np.ndarray):
+        row, col = np.nonzero(A)
+        return row, col, A[row, col]
+    elif isinstance(A, Tensor):
+        row, col = A.nonzero().unbind(1)
+        return row, col, A[row, col]
+    else:
+        raise ValueError(f"Unknown type {type(A)}")
 
 def to_scalar(x: Array) -> float:
     if isinstance(x, Tensor):
