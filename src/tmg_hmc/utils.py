@@ -1,18 +1,35 @@
 import numpy as np 
 from cmath import sqrt, acos
-from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 from torch import Tensor
+from typing import TypeAlias, Tuple
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
 
-Array = np.ndarray | Tensor
+Array: TypeAlias = np.ndarray | Tensor
 
 def sparsify(A: Array) -> Array:
     if isinstance(A, np.ndarray):
-        return csc_matrix(A)
+        return coo_matrix(A)
     elif isinstance(A, Tensor):
-        return A.to_sparse_csc()
-    
+        return A.to_sparse()
+
+def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
+    match A:
+        case coo_matrix:
+            return A.row, A.col, A.data
+        case torch.sparse_coo_tensor:
+            row, col = A.indices()
+            return row, col, A.values()
+        case np.ndarray:
+            row, col = np.nonzero(A)
+            return row, col, A[row, col]
+        case Tensor:
+            row, col = A.nonzero().unbind(1)
+            return row, col, A[row, col]
+        _:
+            raise ValueError(f"Unknown type {type(A)}")
+
 def to_scalar(x: Array) -> float:
     if isinstance(x, Tensor):
         return x.item()
