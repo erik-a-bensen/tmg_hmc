@@ -51,9 +51,9 @@ class Constraint(Protocol):
         if d['type'] == 'LinearConstraint':
             return LinearConstraint(d['f'], d['c'])
         elif d['type'] == 'SimpleQuadraticConstraint':
-            return SimpleQuadraticConstraint(d['A_orig'], d['c'], d['S'])
+            return SimpleQuadraticConstraint.build_from_dict(d, gpu)
         elif d['type'] == 'QuadraticConstraint':
-            return QuadraticConstraint(d['A_orig'], d['b'], d['c'], d['S'])
+            return QuadraticConstraint.build_from_dict(d, gpu)
         else:
             raise ValueError(f"Unknown constraint type {d['type']}")
     
@@ -90,7 +90,8 @@ class LinearConstraint(Constraint):
         s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s = np.hstack([s1, s2])
         return s[s > eps]
-    
+
+
 
 class BaseQuadraticConstraint(Constraint):
     """
@@ -106,6 +107,7 @@ class BaseQuadraticConstraint(Constraint):
     def _setup_values_sparse(self, A: Array, S: Array):
         rows, cols, vals = get_sparse_elements(A)
         n = A.shape[0]
+        self.A_orig = A
         self.s_rows = [S[i,:].reshape((1,n)) for i in rows] # S[i,:] is a row vector
         self.s_cols = [S[:,j].reshape((n,1)) for j in cols] # S[:,j] is a column vector
         self.s_vals = vals
@@ -137,6 +139,7 @@ class BaseQuadraticConstraint(Constraint):
         return x.T @ self.A_dot_x(x)
 
 
+
 class SimpleQuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x^T A x + c >= 0
@@ -144,10 +147,31 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
     def __init__(self, A: Array, c: float, S: Array, sparse: bool = False):
         # Check that A is symmetric
         self.c = c
+        self.sparse = sparse
         if sparse:
             self._setup_values_sparse(A, S)
         else:
             self._setup_values(A, S)
+
+    @classmethod 
+    def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
+        sparse = d['sparse']
+        A = d['A_orig']
+        c = d['c']
+        if sparse:
+            cols = d['s_cols']
+            rows = d['s_rows']
+            n = len(cols[0])
+            S = torch.zeros((n,n)).cuda() if gpu else np.zeros((n,n))
+            rowinds, colinds, _ = get_sparse_elements(A)
+            for rowind in rowinds:
+                S[rowind,:] = rows[rowind]
+            for colind in colinds:
+                S[:,colind] = cols[colind]
+            return cls(A, c, S, sparse)
+        else:
+            S = d['S']
+            return cls(A, c, S, sparse)
     
     def value_(self, x: Array) -> float:
         return to_scalar(x.T @ self.A @ x + self.c)
@@ -188,6 +212,8 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         s = np.hstack([s1, s2])
         return s[s > eps]
 
+
+
 class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
@@ -195,10 +221,37 @@ class QuadraticConstraint(BaseQuadraticConstraint):
     def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = False):
         self.c = c
         self.b = b
+        self.sparse = sparse
         if sparse:
             self._setup_values_sparse(A, S)
         else:
             self._setup_values(A, S)
+
+    @classmethod 
+    def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
+        sparse = d['sparse']
+        A = d['A_orig']
+        c = d['c']
+        b = d['b']
+        if sparse:
+            cols = d['s_cols']
+            rows = d['s_rows']
+            print(rows)
+            n = len(cols[0].flatten())
+            dtype = cols[0].dtype
+            print(n)
+            S = torch.zeros((n,n), dtype=dtype).cuda() if gpu else np.zeros((n,n), dtype=dtype)
+            rowinds, colinds, _ = get_sparse_elements(A)
+            for i in range(len(rowinds)):
+                rowind = rowinds[i]
+                S[rowind,:] = rows[i].flatten()
+            for j in range(len(colinds)):
+                colind = colinds[j]
+                S[:,colind] = cols[j].flatten()
+            return cls(A, b, c, S, sparse)
+        else:
+            S = d['S']
+            return cls(A, b, c, S, sparse)
     
     def value_(self, x: Array) -> float:
         return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
