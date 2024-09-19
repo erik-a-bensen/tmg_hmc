@@ -3,7 +3,8 @@ import numpy as np
 from typing import Protocol, Tuple
 import torch
 from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
-                           soln6, soln7, soln8, Array, to_scalar)
+                           soln6, soln7, soln8, Array, to_scalar,
+                           get_sparse_elements)
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
@@ -17,6 +18,8 @@ class Constraint(Protocol):
     def is_zero(self, x: Array) -> Tuple[bool, bool]:
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
+    
+    def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:...
 
     def hit_time(self, a: Array, b: Array) -> Array:...
 
@@ -70,7 +73,7 @@ class LinearConstraint(Constraint):
     def normal(self, x: Array) -> Array:
         return self.f
 
-    def compute_q(self, a, b) -> Tuple[float, float]:
+    def compute_q(self, a: Array, b: Array) -> Tuple[float, float]:
         f = self.f
         q1 = to_scalar(f.T @ a)
         q2 = to_scalar(f.T @ b)
@@ -87,35 +90,91 @@ class LinearConstraint(Constraint):
         s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s = np.hstack([s1, s2])
         return s[s > eps]
+    
 
-class SimpleQuadraticConstraint(Constraint):
+class BaseQuadraticConstraint(Constraint):
     """
-    Constraint of the form x**T A x + c >= 0
+    Base class for quadratic constraints
     """
-    def __init__(self, A: Array, c: float, S: Array):
-        # Check that A is symmetric
+    def _setup_values(self, A: Array, S: Array):
         self.A_orig = A
         self.S = S
-        self.c = c
-    
+        self.value = self.value_
+        self.normal = self.normal_
+        self.compute_q = self.compute_q_
+
+    def _setup_values_sparse(self, A: Array, S: Array):
+        rows, cols, vals = get_sparse_elements(A)
+        n = A.shape[0]
+        self.s_rows = [S[i,:].reshape((1,n)) for i in rows] # S[i,:] is a row vector
+        self.s_cols = [S[:,j].reshape((n,1)) for j in cols] # S[:,j] is a column vector
+        self.s_vals = vals
+        self.value = self.value_sparse
+        self.normal = self.normal_sparse
+        self.compute_q = self.compute_q_sparse
+
+    def value_(self, x: Array) -> float:...
+
+    def value_sparse(self, x: Array) -> float:...
+
+    def normal_(self, x: Array) -> Array:...
+
+    def normal_sparse(self, x: Array) -> Array:...
+
+    def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:...
+
+    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:...
+
     @property 
     def A(self):
         return self.S @ self.A_orig @ self.S
     
-    def value(self, x: Array) -> float:
+    def A_dot_x(self, x: Array) -> Array:
+        dot_prods = [row @ x for row in self.s_rows]
+        return sum([val * col for val, col in zip(self.s_vals, dot_prods)])
+
+    def x_dot_A_dot_x(self, x: Array) -> float:
+        return x.T @ self.A_dot_x(x)
+
+
+class SimpleQuadraticConstraint(BaseQuadraticConstraint):
+    """
+    Constraint of the form x^T A x + c >= 0
+    """
+    def __init__(self, A: Array, c: float, S: Array, sparse: bool = False):
+        # Check that A is symmetric
+        self.c = c
+        if sparse:
+            self._setup_values_sparse(A, S)
+        else:
+            self._setup_values(A, S)
+    
+    def value_(self, x: Array) -> float:
         return to_scalar(x.T @ self.A @ x + self.c)
+    
+    def value_sparse(self, x: Array) -> float:
+        return to_scalar(self.x_dot_A_dot_x(x) + self.c)
 
-    def normal(self, x: Array) -> Array:
+    def normal_(self, x: Array) -> Array:
         return 2 * self.A @ x
+    
+    def normal_sparse(self, x: Array) -> Array:
+        return 2 * self.A_dot_x(x)
 
-    def compute_q(self, a, b) -> Tuple[float, float, float]:
+    def compute_q_(self, a: Array, b: Array) -> Tuple[float, float, float]:
         A = self.A
         c = self.c
         q1 = to_scalar(b.T @ A @ b - a.T @ A @ a)
         q3 = c + to_scalar(a.T @ A @ a)
         q4 = to_scalar(2 * a.T @ A @ b)
         return q1, q3, q4
-
+    
+    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float]:
+        q1 = to_scalar(self.x_dot_A_dot_x(b) - self.x_dot_A_dot_x(a))
+        q3 = self.c + to_scalar(self.x_dot_A_dot_x(a))
+        q4 = to_scalar(2 * a.T @ self.A_dot_x(b))
+        return q1, q3, q4
+    
     def hit_time(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
@@ -129,27 +188,31 @@ class SimpleQuadraticConstraint(Constraint):
         s = np.hstack([s1, s2])
         return s[s > eps]
 
-class QuadraticConstraint(Constraint):
+class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: Array, b: Array, c: float, S: Array):
-        self.A_orig = A
-        self.b = b
+    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = False):
         self.c = c
-        self.S = S
-
-    @property 
-    def A(self):
-        return self.S @ self.A_orig @ self.S
+        self.b = b
+        if sparse:
+            self._setup_values_sparse(A, S)
+        else:
+            self._setup_values(A, S)
     
-    def value(self, x: Array) -> float:
+    def value_(self, x: Array) -> float:
         return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
+    
+    def value_sparse(self, x: Array) -> float:
+        return to_scalar(self.x_dot_A_dot_x(x) + self.b.T @ x + self.c)
 
-    def normal(self, x: Array) -> Array:
+    def normal_(self, x: Array) -> Array:
         return 2 * self.A @ x + self.b
+    
+    def normal_sparse(self, x: Array) -> Array:
+        return 2 * self.A_dot_x(x) + self.b
 
-    def compute_q(self, a, b) -> Tuple[float, float, float, float, float]:
+    def compute_q_(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
         A = self.A
         B = self.b
         c = self.c
@@ -157,6 +220,16 @@ class QuadraticConstraint(Constraint):
         q2 = to_scalar(B.T @ b)
         q3 = c + to_scalar(a.T @ A @ a)
         q4 = to_scalar(2 * a.T @ A @ b)
+        q5 = to_scalar(B.T @ a)
+        return q1, q2, q3, q4, q5
+    
+    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
+        B = self.b
+        c = self.c
+        q1 = to_scalar(self.x_dot_A_dot_x(b) - self.x_dot_A_dot_x(a))
+        q2 = to_scalar(B.T @ b)
+        q3 = c + to_scalar(self.x_dot_A_dot_x(a))
+        q4 = to_scalar(2 * a.T @ self.A_dot_x(b))
         q5 = to_scalar(B.T @ a)
         return q1, q2, q3, q4, q5
 
