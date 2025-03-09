@@ -2,12 +2,14 @@ from __future__ import annotations
 import numpy as np
 from typing import Protocol, Tuple
 import torch
-from tmg_hmc.utils import (soln1, soln2, soln3, soln4, soln5, 
-                           soln6, soln7, soln8, Array, to_scalar,
-                           get_sparse_elements)
+from tmg_hmc.utils import (Array, to_scalar, get_sparse_elements, get_shared_library,
+                            soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8)
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
+
+# Load the shared library
+lib = get_shared_library()
 
 class Constraint(Protocol):
     def value(self, x: Array) -> float:...
@@ -218,7 +220,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = False):
+    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = False, compiled: bool = True):
         self.c = c
         self.b = b
         self.sparse = sparse
@@ -226,6 +228,10 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             self._setup_values_sparse(A, S)
         else:
             self._setup_values(A, S)
+        if compiled:
+            self.hit_time = self.hit_time_cpp
+        else:
+            self.hit_time = self.hit_time_py
 
     @classmethod 
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
@@ -286,9 +292,19 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         q5 = to_scalar(B.T @ a)
         return q1, q2, q3, q4, q5
 
-    def hit_time(self, x: Array, xdot: Array) -> Array:
+    def hit_time_cpp(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
-        pis = np.array([-2, 0, 2])*np.pi
+        pis = np.array([-2, 0, 2]).reshape(3,1)*np.pi
+        qs = self.compute_q(a, b)
+        soln = lib.calc_all_solutions(*qs)
+        s = np.ctypeslib.as_array(soln, shape=(1,8))
+        lib.free_ptr(soln)
+        s = (s + pis).flatten()
+        return np.unique(s[s > 1e-8])
+    
+    def hit_time_py(self, x: Array, xdot: Array) -> Array:
+        a, b = xdot, x
+        pis = np.array([-2, 0, 2]).reshape(3,1)*np.pi
         qs = self.compute_q(a, b)
         s1 = soln1(*qs) + pis
         s2 = soln2(*qs) + pis
@@ -300,3 +316,20 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         return np.unique(s[s > 1e-8])
+    
+if __name__ == "__main__":
+    test_constr = QuadraticConstraint(np.array([[1, 0], [0, 1]]), np.array([0, 0]), 0, np.array([[1, 0], [0, 1]]))
+    x = np.array([1, 1]).reshape(2,1)
+    xdot = np.array([1, 0]).reshape(2,1)
+    import time 
+    start = time.time()
+    for _ in range(100000):
+        test_constr.hit_time_py(x, xdot)
+    py_time = time.time() - start
+    print(f'Python time: {py_time}')
+    start = time.time()
+    for _ in range(100000):
+        test_constr.hit_time_cpp(x, xdot)
+    cpp_time = time.time() - start
+    print(f'C++ time: {cpp_time}')
+    print(f'Speedup: {py_time / cpp_time}')

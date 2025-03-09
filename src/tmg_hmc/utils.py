@@ -3,10 +3,22 @@ from cmath import sqrt, acos
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 from torch import Tensor, sparse_coo
 from typing import TypeAlias, Tuple
+import ctypes
+import os
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
 
 Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
+
+def get_shared_library():
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    lib_path = os.path.join(base_path, 'compiled', 'calc_solutions.so')
+    lib = ctypes.CDLL(lib_path)
+
+    # Define function arguments
+    lib.calc_all_solutions.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+    lib.calc_all_solutions.restype = ctypes.POINTER(ctypes.c_double)
+    return lib
 
 def sparsify(A: Array) -> Array:
     if isinstance(A, np.ndarray):
@@ -33,6 +45,8 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
 def to_scalar(x: Array) -> float:
     if isinstance(x, Tensor):
         return x.item()
+    elif len(x.shape) == 1:
+        return x[0]
     return x[0,0]
 
 def arccos(x: float) -> float:
@@ -712,3 +726,26 @@ def soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
                          72*(q1**2 + q4**2)*(q3**2 - q5**2)*(q2**2 + 2*q1*q3 - q4**2 + q5**2) + 
                          2*(q2**2 + 2*q1*q3 - q4**2 + q5**2)**3)**2))**(1./3)/
                  (3.*2**(1./3)*(q1**2 + q4**2)))))/2.))
+
+# if __name__ == "__main__":
+#     q1, q2, q3, q4, q5 = -1., -2, -3, -4, 5
+#     import time
+#     t = time.time()
+#     for i in range(100000):
+#         soln1(q1, q2, q3, q4, q5)
+#         soln2(q1, q2, q3, q4, q5)
+#         soln3(q1, q2, q3, q4, q5)
+#         soln4(q1, q2, q3, q4, q5)
+#         soln5(q1, q2, q3, q4, q5)
+#         soln6(q1, q2, q3, q4, q5)
+#         soln7(q1, q2, q3, q4, q5)
+#         soln8(q1, q2, q3, q4, q5)
+#     print(time.time()-t)
+#     print(f"Solution 1: {soln1(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 2: {soln2(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 3: {soln3(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 4: {soln4(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 5: {soln5(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 6: {soln6(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 7: {soln7(q1, q2, q3, q4, q5)}")
+#     print(f"Solution 8: {soln8(q1, q2, q3, q4, q5)}")
