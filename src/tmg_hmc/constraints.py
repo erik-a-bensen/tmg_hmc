@@ -300,7 +300,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s = np.ctypeslib.as_array(soln, shape=(1,8))
         lib.free_ptr(soln)
         s = (s + pis).flatten()
-        return np.unique(s[s > 1e-8])
+        return np.unique(s[s > eps])#1e-8])
     
     def hit_time_py(self, x: Array, xdot: Array) -> Array:
         a, b = xdot, x
@@ -315,7 +315,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s7 = soln7(*qs) + pis
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
-        return np.unique(s[s > 1e-8])
+        return np.unique(s[s > eps])#1e-8])
     
 if __name__ == "__main__":
     test_constr = QuadraticConstraint(np.array([[1, 0], [0, 1]]), np.array([0, 0]), 0, np.array([[1, 0], [0, 1]]))

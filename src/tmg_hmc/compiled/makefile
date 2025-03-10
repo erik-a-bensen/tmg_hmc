@@ -1,8 +1,50 @@
-calc_solutions: utils.cpp
-	g++ -c -fPIC utils.cpp -o calc_solutions.o
-	g++ -shared -o calc_solutions.so calc_solutions.o
+CC=g++
+target=utils.cpp
+output=calc_solutions
+CFLAGS=-c -fPIC
+ifeq ($(OS),Windows_NT)
+    CCFLAGS += -D WIN32
+	share_ext=dll
+	exec_ext=exe
+    ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
+        CCFLAGS += -D AMD64
+    else
+        ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+            CCFLAGS += -D AMD64
+        endif
+        ifeq ($(PROCESSOR_ARCHITECTURE),x86)
+            CCFLAGS += -D IA32
+        endif
+    endif
+else
+    UNAME_S := $(shell uname -s)
+	share_ext=so 
+	exec_ext=sh
+    ifeq ($(UNAME_S),Linux)
+        CCFLAGS += -D LINUX
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        CCFLAGS += -D OSX
+    endif
+    UNAME_P := $(shell uname -p)
+    ifeq ($(UNAME_P),x86_64)
+        CCFLAGS += -D AMD64
+    endif
+    ifneq ($(filter %86,$(UNAME_P)),)
+        CCFLAGS += -D IA32
+    endif
+    ifneq ($(filter arm%,$(UNAME_P)),)
+        CCFLAGS += -D ARM
+    endif
+endif
+
+
+build: $(target)
+	$(CC) $(CFLAGS) $(target) -o $(output).o
+	$(CC) -shared -o $(output).$(share_ext) $(output).o
+	$(CC) $(output).o -o $(output).$(exec_ext)
 
 clean:
-	rm -f *.o *.so
+	rm -f $(output).*
 
-rebuild: clean calc_solutions
+rebuild: clean build
