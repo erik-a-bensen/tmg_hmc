@@ -108,10 +108,11 @@ class BaseQuadraticConstraint(Constraint):
 
     def _setup_values_sparse(self, A: Array, S: Array):
         rows, cols, vals = get_sparse_elements(A)
-        n = A.shape[0]
+        self.n_comps = len(rows)
+        self.n = A.shape[0]
         self.A_orig = A
-        self.s_rows = [S[i,:].reshape((1,n)) for i in rows] # S[i,:] is a row vector
-        self.s_cols = [S[:,j].reshape((n,1)) for j in cols] # S[:,j] is a column vector
+        self.s_rows = np.vstack([S[i,:].reshape((1,self.n)) for i in rows]) # S[i,:] is a row vector
+        self.s_cols = np.hstack([S[:,j].reshape((self.n,1)) for j in cols]) # S[:,j] is a column vector
         self.s_vals = vals
         self.value = self.value_sparse
         self.normal = self.normal_sparse
@@ -134,8 +135,8 @@ class BaseQuadraticConstraint(Constraint):
         return self.S @ self.A_orig @ self.S
     
     def A_dot_x(self, x: Array) -> Array:
-        dot_prods = [row @ x for row in self.s_rows]
-        return sum([val * dot * col for val, dot, col in zip(self.s_vals, self.s_cols, dot_prods)])
+        dot_prods = [self.s_rows[i,:].reshape((1,self.n)) @ x for i in range(self.n_comps)]#[row @ x for row in self.s_rows]
+        return sum([self.s_vals[i]*dot_prods[i]*self.s_cols[:,i].reshape((self.n,1)) for i in range(self.n_comps)])#sum([val * dot * col for val, dot, col in zip(self.s_vals, self.s_cols, dot_prods)])
 
     def x_dot_A_dot_x(self, x: Array) -> float:
         return x.T @ self.A_dot_x(x)
@@ -220,7 +221,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = False, compiled: bool = True):
+    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = True, compiled: bool = True):
         self.c = c
         self.b = b
         self.sparse = sparse

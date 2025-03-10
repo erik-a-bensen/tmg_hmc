@@ -63,7 +63,7 @@ class TMGSampler:
             raise ValueError("Sigma_half must be symmetric")
         self.Sigma_half = torch.tensor(Sigma_half).cuda() if self.gpu else Sigma_half
         
-    def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True) -> None:
+    def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
         S = self.Sigma_half
         mu = self.mu
         if f is not None:
@@ -108,7 +108,7 @@ class TMGSampler:
             c_new = c_new[0,0]
         
         if nonzero_A and nonzero_f:
-            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S, sparse))
+            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S, sparse, compiled))
         elif nonzero_A and (not nonzero_f):
             self.constraints.append(SimpleQuadraticConstraint(A, c_new, S, sparse))
         elif (not nonzero_A) and nonzero_f:
@@ -146,7 +146,7 @@ class TMGSampler:
         x1, _ = self._propagate(x, xdot, b1)
         hmid = (b1 + b2) / 2
         xmid, xdotmid = self._propagate(x, xdot, hmid)
-        if np.isclose(c.value(xmid), 0):
+        if np.isclose(c.value(xmid),0.):
             return xmid, xdotmid, hmid, True
         if np.sign(c.value(xmid)) != np.sign(c.value(x1)):
             return self._binary_search(x, xdot, b1, hmid, c)
