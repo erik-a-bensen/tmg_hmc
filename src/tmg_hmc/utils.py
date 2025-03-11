@@ -9,6 +9,7 @@ import os
 np.seterr(divide='ignore', invalid='ignore')
 
 Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
+Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix 
 
 def get_shared_library():
     base_path = os.path.dirname(os.path.abspath(__file__))
@@ -18,12 +19,6 @@ def get_shared_library():
     # Define function arguments
     lib.calc_all_solutions.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
     lib.calc_all_solutions.restype = ctypes.POINTER(ctypes.c_double)
-
-    lib.A_dot_x.argtypes = [np.ctypeslib.ndpointer(np.float64, ndim=1, flags='C_CONTIGUOUS'), np.ctypeslib.ndpointer(np.float32, ndim=1, flags='C_CONTIGUOUS'), ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-    lib.A_dot_x.restype = ctypes.POINTER(ctypes.c_double)
-
-    lib.x_dot_A_dot_x.argtypes = [np.ctypeslib.ndpointer(np.float64, ndim=1, flags='C_CONTIGUOUS'), np.ctypeslib.ndpointer(np.float32, ndim=1, flags='C_CONTIGUOUS'), ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-    lib.x_dot_A_dot_x.restype = ctypes.POINTER(ctypes.c_double)
     return lib
 
 def sparsify(A: Array) -> Array:
@@ -48,8 +43,10 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     else:
         raise ValueError(f"Unknown type {type(A)}")
 
-def to_scalar(x: Array) -> float:
-    if isinstance(x, Tensor):
+def to_scalar(x: Array | float) -> float:
+    if isinstance(x, float):
+        return x
+    elif isinstance(x, Tensor):
         return x.item()
     elif len(x.shape) == 1:
         return x[0]
