@@ -113,7 +113,7 @@ class BaseQuadraticConstraint(Constraint):
         self.A_orig = A
         self.s_rows = np.vstack([S[i,:].reshape((1,self.n)) for i in rows]) # S[i,:] is a row vector
         self.s_cols = np.hstack([S[:,j].reshape((self.n,1)) for j in cols]) # S[:,j] is a column vector
-        self.s_vals = vals
+        self.a_vals = vals
         self.value = self.value_sparse
         self.normal = self.normal_sparse
         self.compute_q = self.compute_q_sparse
@@ -134,12 +134,18 @@ class BaseQuadraticConstraint(Constraint):
     def A(self):
         return self.S @ self.A_orig @ self.S
     
-    def A_dot_x(self, x: Array) -> Array:
+    def A_dot_x_py(self, x: Array) -> Array:
         dot_prods = [self.s_rows[i,:].reshape((1,self.n)) @ x for i in range(self.n_comps)]#[row @ x for row in self.s_rows]
-        return sum([self.s_vals[i]*dot_prods[i]*self.s_cols[:,i].reshape((self.n,1)) for i in range(self.n_comps)])#sum([val * dot * col for val, dot, col in zip(self.s_vals, self.s_cols, dot_prods)])
+        return sum([self.a_vals[i]*dot_prods[i]*self.s_cols[:,i].reshape((self.n,1)) for i in range(self.n_comps)])#sum([val * dot * col for val, dot, col in zip(self.a_vals, self.s_cols, dot_prods)])
+    
+    def A_dot_x_cpp(self, x: Array) -> Array:
+        return lib.dot_sparse(x, self.s_rows, self.a_vals, self.n, self.n_comps)
 
-    def x_dot_A_dot_x(self, x: Array) -> float:
+    def x_dot_A_dot_x_py(self, x: Array) -> float:
         return x.T @ self.A_dot_x(x)
+    
+    def x_dot_A_dot_x_cpp(self, x: Array) -> float:
+        return lib.dot_sparse_dot(x, self.s_rows, self.a_vals, self.n, self.n_comps)
 
 
 
@@ -224,15 +230,20 @@ class QuadraticConstraint(BaseQuadraticConstraint):
     def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = True, compiled: bool = True):
         self.c = c
         self.b = b
-        self.sparse = sparse
-        if sparse:
+        self.sparse = sparse or compiled
+        if self.sparse:
             self._setup_values_sparse(A, S)
         else:
             self._setup_values(A, S)
-        if compiled:
+        if self.compiled:
             self.hit_time = self.hit_time_cpp
+            self.s_rows = self.s_rows.flatten().astype(np.float64)
+            self.A_dot_x = self.A_dot_x_cpp
+            self.x_dot_A_dot_x = self.x_dot_A_dot_x_cpp
         else:
             self.hit_time = self.hit_time_py
+            self.A_dot_x = self.A_dot_x_py
+            self.x_dot_A_dot_x = self.x_dot_A_dot_x_py
 
     @classmethod 
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:

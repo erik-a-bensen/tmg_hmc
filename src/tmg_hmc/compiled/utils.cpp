@@ -1,5 +1,32 @@
 #include "utils.h"
 
+// Sparse dot product base functions 
+double* A_dot_x_base(const double* x, const double* Arows, const double* Avals, const int n, const int n_comp) {
+    double* out = new double[n];
+    double dot;
+    for (int i = 0; i < n_comp; i++) {
+        out[i] = 0;
+        dot = 0;
+        for (int j = 0; j < n; j++) {
+            dot += Arows[i*n + j] * x[j];
+        }
+        for (int j = 0; j < n; j++) {
+            out[i] += Arows[i*n + j] * dot;
+        }
+    }
+    return out;
+}
+
+double x_dot_A_dot_x_base(const double* x, const double* Arows, const double* Avals, const int n, const int n_comp) {
+    double* Ax = A_dot_x_base(x, Arows, Avals, n, n_comp);
+    double out = 0;
+    for (int i = 0; i < n_comp; i++) {
+        out += x[i] * Ax[i];
+    }
+    free(Ax);
+    return out;
+}
+
 // Calculate all intermediate values once and return all 8 solutions
 double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5) {
     double* solutions = new double[8];
