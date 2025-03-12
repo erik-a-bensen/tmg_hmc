@@ -146,14 +146,16 @@ class TMGSampler:
         x1, _ = self._propagate(x, xdot, b1)
         hmid = (b1 + b2) / 2
         xmid, xdotmid = self._propagate(x, xdot, hmid)
-        if np.isclose(c.value(xmid),0.):
+        x2, _ = self._propagate(x, xdot, b2)
+        if np.isclose(c.value(xmid),0., atol=1e-12):
             return xmid, xdotmid, hmid, True
         if np.sign(c.value(xmid)) != np.sign(c.value(x1)):
             return self._binary_search(x, xdot, b1, hmid, c)
         return self._binary_search(x, xdot, hmid, b2, c)
     
     def _refine_hit_time(self, x: Array, xdot: Array, c: QuadraticConstraint) -> Tuple[Array, Array, float, bool]:
-        sign = np.sign(c.value(x))
+        value = c.value(x)
+        sign = np.sign(value)
         h = 1e-3 * sign
         x_temp, _ = self._propagate(x, xdot, h)
         if np.sign(c.value(x_temp)) == sign:
@@ -195,6 +197,7 @@ class TMGSampler:
         self.constraint_violations += 1
         if verbose:
             print(f"Constraint violated, redoing iteration")
+
         xdot = self.sample_xdot()
         return self._iterate(x_init, xdot, verbose)
     

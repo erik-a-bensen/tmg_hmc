@@ -2,8 +2,14 @@
 #include <vector>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
+#include <complex>
 
 using namespace std;
+
+double arccos(complex<double> z){
+    return real(acos(z));
+}
 
 // Setup Python ctypes interface for calc_all_solutions
 extern "C" {
