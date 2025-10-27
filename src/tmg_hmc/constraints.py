@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from typing import Protocol, Tuple
+from typing import Tuple
+from abc import ABC, abstractmethod
 import torch
 from tmg_hmc.utils import (Array, Sparse, to_scalar, get_sparse_elements, get_shared_library,
                             soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8)
@@ -11,9 +12,14 @@ eps = 1e-12
 # Load the shared library
 lib = get_shared_library()
 
-class Constraint(Protocol):
-    def value(self, x: Array) -> float:...
-        
+class Constraint(ABC):
+    """
+    Abstract base class for constraints
+    """
+    @abstractmethod
+    def value(self, x: Array) -> float:
+        pass
+
     def is_satisfied(self, x: Array) -> bool:
         return self.value(x) >= 0 
 
@@ -21,11 +27,17 @@ class Constraint(Protocol):
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
     
-    def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:...
+    @abstractmethod
+    def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
+        pass
 
-    def hit_time(self, a: Array, b: Array) -> Array:...
+    @abstractmethod
+    def hit_time(self, a: Array, b: Array) -> Array:
+        pass
 
-    def normal(self, x: Array) -> Array:...
+    @abstractmethod
+    def normal(self, x: Array) -> Array:
+        pass
 
     def reflect(self, x: Array, xdot: Array) -> Array:
         f = self.normal(x)
@@ -95,7 +107,7 @@ class LinearConstraint(Constraint):
 
 
 
-class BaseQuadraticConstraint(Constraint):
+class BaseQuadraticConstraint(ABC, Constraint):
     """
     Base class for quadratic constraints
     """
@@ -118,17 +130,29 @@ class BaseQuadraticConstraint(Constraint):
         self.normal = self.normal_sparse
         self.compute_q = self.compute_q_sparse
 
-    def value_(self, x: Array) -> float:...
+    @abstractmethod
+    def value_(self, x: Array) -> float:
+        pass
 
-    def value_sparse(self, x: Array) -> float:...
+    @abstractmethod
+    def value_sparse(self, x: Array) -> float:
+        pass
 
-    def normal_(self, x: Array) -> Array:...
+    @abstractmethod
+    def normal_(self, x: Array) -> Array:
+        pass
 
-    def normal_sparse(self, x: Array) -> Array:...
+    @abstractmethod
+    def normal_sparse(self, x: Array) -> Array:
+        pass
 
-    def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:...
+    @abstractmethod
+    def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:
+        pass
 
-    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:...
+    @abstractmethod
+    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:
+        pass
 
     @property 
     def A(self):
