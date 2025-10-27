@@ -27,6 +27,7 @@ extern "C" {
      * @return Pointer to dynamically allocated array of 8 doubles containing all computed solutions.
      *         The caller must free this memory using free_ptr() to avoid memory leaks.
      * 
+     * @note DO NOT MODIFY THE IMPLEMENTATION OF THIS FUNCTION
      * @note The solutions are derived from the quartic equation associated with the quadratic 
      *       constraint hit time given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). 
      *       The expressions are computed exactly using Mathematica and then exported to C.
