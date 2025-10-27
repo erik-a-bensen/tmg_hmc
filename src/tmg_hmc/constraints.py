@@ -3,8 +3,8 @@ import numpy as np
 from typing import Tuple
 from abc import ABC, abstractmethod
 import torch
-from tmg_hmc.utils import (Array, Sparse, to_scalar, get_sparse_elements, get_shared_library,
-                            soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8)
+from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements, get_shared_library
+from tmg_hmc.quadratic_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
