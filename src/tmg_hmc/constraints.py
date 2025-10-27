@@ -18,28 +18,79 @@ class Constraint(ABC):
     """
     @abstractmethod
     def value(self, x: Array) -> float:
+        """
+        Compute the value of the constraint at x
+        """
         pass
 
     def is_satisfied(self, x: Array) -> bool:
+        """
+        Check if the constraint is satisfied at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+        Returns
+        -------
+        bool
+            True if the constraint is satisfied, False otherwise
+        """
         return self.value(x) >= 0 
 
     def is_zero(self, x: Array) -> Tuple[bool, bool]:
+        """
+        Check if the constraint is zero at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+        Returns
+        -------
+        Tuple[bool, bool]
+            (is_strictly_zero, is_approximately_zero)
+        """
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
     
     @abstractmethod
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
+        """
+        Compute the coefficients of the constraint equation along the trajectory defined by a and b
+        """
         pass
 
     @abstractmethod
     def hit_time(self, a: Array, b: Array) -> Array:
+        """
+        Compute the hit time of the constraint along the trajectory defined by a and b
+        """
         pass
 
     @abstractmethod
     def normal(self, x: Array) -> Array:
+        """
+        Compute the normal vector of the constraint at x
+        """
         pass
 
     def reflect(self, x: Array, xdot: Array) -> Array:
+        """
+        Reflect the velocity xdot at the constraint surface defined by x
+
+        Parameters
+        ----------
+        x : Array
+            Point on the constraint surface
+        xdot : Array
+            Velocity to be reflected
+
+        Returns
+        -------
+        Array
+            Reflected velocity
+        """
         f = self.normal(x)
         if isinstance(xdot, torch.Tensor):
             norm = torch.sqrt(f.T @ f)
@@ -49,6 +100,14 @@ class Constraint(ABC):
         return xdot - 2 * (f.T @ xdot) * f
 
     def serialize(self) -> dict:
+        """
+        Serialize the constraint to a dictionary
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the constraint
+        """
         d = self.__dict__.copy()
         for k, v in d.items():
             if isinstance(v, torch.Tensor):
@@ -58,6 +117,21 @@ class Constraint(ABC):
     
     @classmethod
     def deserialize(cls, d: dict, gpu: bool) -> Constraint:
+        """
+        Deserialize the constraint from a dictionary
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary representation of the constraint
+        gpu : bool
+            Whether to load tensors onto the GPU
+
+        Returns
+        -------
+        Constraint
+            Deserialized constraint object
+        """
         if gpu:
             for k, v in d.items():
                 if isinstance(v, torch.Tensor):
@@ -77,28 +151,107 @@ class LinearConstraint(Constraint):
     """
     Constraint of the form fx + c >= 0
     """
-    def __init__(self, f: Array, c: float):
+    def __init__(self, f: Array, c: float) -> None:
+        """ 
+        Parameters
+        ----------
+        f : Array
+            Coefficient vector
+        c : float
+            Constant term
+        """
         self.f = f
         self.c = c
     
     def value(self, x: Array) -> float:
+        """
+        Compute the value of the constraint at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+
+        Returns
+        -------
+        float
+            Value of the constraint at x given by f^T x + c
+        """
         return to_scalar(self.f.T @ x + self.c)
 
     def normal(self, x: Array) -> Array:
+        """
+        Compute the normal vector of the constraint at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector of the constraint at x given by f
+        """
         return self.f
 
     def compute_q(self, a: Array, b: Array) -> Tuple[float, float]:
+        """
+        Compute the 2 q terms for the linear constraint
+
+        Parameters
+        ----------
+        a : Array
+            The velocity of the point in the HMC trajectory
+        b : Array
+            The position of the point in the HMC trajectory
+
+        Returns
+        -------
+        Tuple[float, float]
+            q terms for the constraint
+
+        Notes
+        -----
+        These expressions are defined such that Eqn 2.22 in Pakman and Paninski (2014) 
+        simplifies to: q1 sin(t) + q2 cos(t) + c = 0
+        """
         f = self.f
         q1 = to_scalar(f.T @ a)
         q2 = to_scalar(f.T @ b)
         return q1, q2
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
-        a, b = xdot, x
-        q1, q2 = self.compute_q(a, b)
+        """
+        Compute the hit time of the constraint along the trajectory defined by x and xdot
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            Hit time of the constraint along the trajectory
+
+        Notes
+        -----
+        Hit time is computed by solving Eqn 2.26 in Pakman and Paninski (2014)
+        See <<Mathematica notebook>> for derivation
+        Due to the sum of inverse trig functions, we check the solution and 
+        the solution +- pi to ensure we capture all hit times. 
+
+        Only positive hit times are returned and any ghost solutions are filtered 
+        out at a later stage.
+        """
+        q1, q2 = self.compute_q(xdot, x)
         c = self.c
         u = np.sqrt(q1**2 + q2**2)
-        if (u < abs(c)) or (u == 0) or (q2 == 0): # No intersection
+        if (u < abs(c)) or (u == 0) or (q2 == 0): 
+            # No intersection so return NaN
             return np.array([np.nan])
         s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
         s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
@@ -111,14 +264,44 @@ class BaseQuadraticConstraint(ABC, Constraint):
     """
     Base class for quadratic constraints
     """
-    def _setup_values(self, A: Array, S: Array):
+    def _setup_values(self, A: Array, S: Array) -> None:
+        """
+        Setup internal values for dense matrix computation
+        
+        Parameters
+        ----------
+        A : Array
+            Quadratic coefficient matrix
+        S : Array
+            Transformation matrix given by the Symmetric Sqrt of the Mass matrix
+
+        Notes
+        -----
+        Sets up the internal methods for value, normal, and compute_q to use 
+        dense matrix computations.
+        """
         self.A_orig = A
         self.S = S
         self.value = self.value_
         self.normal = self.normal_
         self.compute_q = self.compute_q_
 
-    def _setup_values_sparse(self, A: Array, S: Array):
+    def _setup_values_sparse(self, A: Array, S: Array) -> None:
+        """
+        Setup internal values for sparse matrix computation
+
+        Parameters
+        ----------
+        A : Array
+            Quadratic coefficient matrix
+        S : Array
+            Transformation matrix given by the Symmetric Sqrt of the Mass matrix
+
+        Notes
+        -----
+        Sets up the internal methods for value, normal, and compute_q to use
+        sparse matrix computations.
+        """
         rows, cols, vals = get_sparse_elements(A)
         self.n_comps = len(rows)
         self.n = A.shape[0]
@@ -132,68 +315,120 @@ class BaseQuadraticConstraint(ABC, Constraint):
 
     @abstractmethod
     def value_(self, x: Array) -> float:
+        """Abstract method for dense value computation"""
         pass
 
     @abstractmethod
     def value_sparse(self, x: Array) -> float:
+        """Abstract method for sparse value computation"""
         pass
 
     @abstractmethod
     def normal_(self, x: Array) -> Array:
+        """Abstract method for dense normal vector computation"""
         pass
 
     @abstractmethod
     def normal_sparse(self, x: Array) -> Array:
+        """Abstract method for sparse normal vector computation"""
         pass
 
     @abstractmethod
     def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:
+        """Abstract method for dense q term computation"""
         pass
 
     @abstractmethod
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:
+        """Abstract method for sparse q term computation"""
         pass
 
     @property 
     def A(self):
+        """Compute the transformed quadratic matrix A = S A_orig S on the fly"""
         return self.S @ self.A_orig @ self.S
     
-    def A_dot_x_py(self, x: Array) -> Array:
+    def A_dot_x(self, x: Array) -> Array:
+        """
+        Compute A x using sparse matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate A x at
+
+        Returns
+        -------
+        Array
+            Result of A x computation
+        """
         dot_prods = [self.s_rows[i,:].reshape((1,self.n)) @ x for i in range(self.n_comps)]
         return sum([self.a_vals[i]*dot_prods[i]*self.s_cols[:,i].reshape((self.n,1)) for i in range(self.n_comps)])
-    
-    def A_dot_x_cpp(self, x: Array) -> Array:
-        dot_prods = self.s_rows @ x # (n_comps, n) @ (n, 1) = (n_comps, 1)
-        out = self.s_cols @ (self.a_vals * dot_prods) # (n, n_comps) @ (n_comps, 1) = (n, 1)
-        return out
 
-    def x_dot_A_dot_x_py(self, x: Array) -> float:
-        return x.T @ self.A_dot_x_py(x)
-    
-    def x_dot_A_dot_x_cpp(self, x: Array) -> float:
-        return self.A_dot_x_cpp(x).T @ x
+    def x_dot_A_dot_x(self, x: Array) -> float:
+        """
+        Compute x^T A x using sparse matrix computations
 
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate x^T A x at
 
+        Returns
+        -------
+        float
+            Result of x^T A x computation
+        """
+        return x.T @ self.A_dot_x(x)
 
 class SimpleQuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x^T A x + c >= 0
     """
     def __init__(self, A: Array, c: float, S: Array, sparse: bool = False):
-        # Check that A is symmetric
+        """
+        Parameters
+        ----------
+        A : Array
+            Quadratic coefficient matrix
+        c : float
+            Constant term
+        S : Array
+            Transformation matrix given by the Symmetric Sqrt of the Mass matrix
+        sparse : bool, optional
+            Whether to use sparse matrix computations, by default False
+
+        Notes
+        -----
+        If A is a sparse matrix, sparse computations are used regardless of the
+        sparse parameter.
+        """
         self.c = c
         if isinstance(A, Sparse):
             sparse = True
         self.sparse = sparse
         if sparse:
             self._setup_values_sparse(A, S)
-            self.A_dot_x = self.A_dot_x_py 
-            self.x_dot_A_dot_x = self.x_dot_A_dot_x_py
         else:
             self._setup_values(A, S)
 
     @classmethod 
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
+        """
+        Build a SimpleQuadraticConstraint from a dictionary representation
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary representation of the constraint
+        gpu : bool
+            Whether to load tensors onto the GPU
+
+        Returns
+        -------
+        SimpleQuadraticConstraint
+            The constructed constraint
+        """
         sparse = d['sparse']
         A = d['A_orig']
         c = d['c']
@@ -213,18 +448,89 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
             return cls(A, c, S, sparse)
     
     def value_(self, x: Array) -> float:
+        """
+        Compute the value of the constraint at x using dense matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+
+        Returns
+        -------
+        float
+            Value of the constraint at x given by x^T A x + c
+        """
         return to_scalar(x.T @ self.A @ x + self.c)
     
     def value_sparse(self, x: Array) -> float:
-        return to_scalar(self.x_dot_A_dot_x(x) + self.c)
+        """
+        Compute the value of the constraint at x using sparse matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+
+        Returns
+        -------
+        float
+            Value of the constraint at x given by x^T A x + c
+        """
+        return to_scalar(x.T @ self.A_dot_x(x) + self.c)
 
     def normal_(self, x: Array) -> Array:
+        """
+        Compute the normal vector at x using dense matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector at x given by 2 * A @ x
+        """
         return 2 * self.A @ x
     
     def normal_sparse(self, x: Array) -> Array:
+        """
+        Compute the normal vector at x using sparse matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector at x given by 2 * A @ x
+        """
         return 2 * self.A_dot_x(x)
 
     def compute_q_(self, a: Array, b: Array) -> Tuple[float, float, float]:
+        """
+        Compute the 3 q terms for the simple quadratic constraint using dense matrix computations
+
+        Parameters
+        ----------
+        a : Array
+            The velocity of the point in the HMC trajectory
+        b : Array
+            The position of the point in the HMC trajectory
+
+        Returns
+        -------
+        Tuple[float, float, float]
+            q terms for the constraint
+
+        Notes
+        -----
+        These expressions are the nonzero q terms defined in equation 2.45 in Pakman and Paninski (2014)
+        """
         A = self.A
         c = self.c
         q1 = to_scalar(b.T @ A @ b - a.T @ A @ a)
@@ -233,16 +539,58 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         return q1, q3, q4
     
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float]:
+        """
+        Compute the 3 q terms for the simple quadratic constraint using sparse matrix computations
+
+        Parameters
+        ----------
+        a : Array
+            The velocity of the point in the HMC trajectory
+        b : Array
+            The position of the point in the HMC trajectory
+
+        Returns
+        -------
+        Tuple[float, float, float]
+            q terms for the constraint
+
+        Notes
+        -----
+        These expressions are the nonzero q terms defined in equation 2.45 in Pakman and Paninski (2014)
+        """
         q1 = to_scalar(self.x_dot_A_dot_x(b) - self.x_dot_A_dot_x(a))
         q3 = self.c + to_scalar(self.x_dot_A_dot_x(a))
         q4 = to_scalar(2 * a.T @ self.A_dot_x(b))
         return q1, q3, q4
     
     def hit_time(self, x: Array, xdot: Array) -> Array:
+        """
+        Compute the hit time for the simple quadratic constraint
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            The hit time for the constraint
+
+        Notes
+        -----
+        Hit time is computed by solving Eqn 2.45 in Pakman and Paninski (2014)
+        See <<Mathematica notebook>> for derivation
+        Only positive hit times are returned and any ghost solutions are filtered 
+        out at a later stage.
+        """
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         u = np.sqrt(q1**2 + q4**2)
-        if (u == 0) or (q4 == 0): # No intersection
+        if (u == 0) or (q4 == 0): 
+            # No intersection so return NaN
             return np.array([np.nan])
         s1 = (np.pi + np.arcsin((q1+2*q3)/u) -
               np.arctan(q1/q4) + pis) / 2 
@@ -258,6 +606,28 @@ class QuadraticConstraint(BaseQuadraticConstraint):
     Constraint of the form x**T A x + b**T x + c >= 0
     """
     def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = True, compiled: bool = True):
+        """
+        Parameters
+        ----------
+        A : Array
+            The quadratic term matrix
+        b : Array
+            The linear term vector
+        c : float
+            The constant term
+        S : Array
+            The transformation matrix given by the Symmetric Sqrt of the Mass matrix
+        sparse : bool
+            Whether to use sparse matrix computations, by default True
+        compiled : bool
+            Whether to use compiled code, by default True
+
+        Notes
+        -----
+        If A is a sparse matrix, sparse computations are used regardless of the
+        sparse parameter.
+        It is highly recommended to use compiled code for performance reasons.
+        """
         self.c = c
         self.b = b
         if isinstance(A, Sparse):
@@ -281,6 +651,21 @@ class QuadraticConstraint(BaseQuadraticConstraint):
 
     @classmethod 
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
+        """
+        Build a QuadraticConstraint from a dictionary representation
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary representation of the constraint
+        gpu : bool
+            Whether to load tensors onto the GPU
+
+        Returns
+        -------
+        QuadraticConstraint
+            The constructed constraint
+        """
         sparse = d['sparse']
         A = d['A_orig']
         c = d['c']
@@ -306,18 +691,86 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             return cls(A, b, c, S, sparse)
     
     def value_(self, x: Array) -> float:
+        """
+        Compute the value of the constraint at x using dense matrix computations
+        
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+        Returns
+        -------
+        float
+            The value of the constraint at x given by x^T A x + b^T x + c
+        """
         return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
     
     def value_sparse(self, x: Array) -> float:
+        """
+        Compute the value of the constraint at x using sparse matrix computations
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+
+        Returns
+        -------
+        float
+            The value of the constraint at x given by x^T A x + b^T x + c
+        """
         return to_scalar(self.x_dot_A_dot_x(x) + self.b.T @ x + self.c)
 
     def normal_(self, x: Array) -> Array:
+        """
+        Compute the normal vector at x using dense matrix computations
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector at x given by 2 * A @ x + b
+        """
         return 2 * self.A @ x + self.b
     
     def normal_sparse(self, x: Array) -> Array:
+        """
+        Compute the normal vector at x using sparse matrix computations
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector at x given by 2 * A @ x + b
+        """
         return 2 * self.A_dot_x(x) + self.b
 
     def compute_q_(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
+        """
+        Compute the 5 q terms for the quadratic constraint using dense matrix computations
+
+        Parameters
+        ----------
+        a : Array
+            The velocity of the point in the HMC trajectory
+        b : Array
+            The position of the point in the HMC trajectory
+
+        Returns
+        -------
+        Tuple[float, float, float, float, float]
+            q terms for the quadratic constraint
+
+        Notes
+        -----
+        These expressions are defined in Eqns 2.40-2.44 in Pakman and Paninski (2014)
+        """
         A = self.A
         B = self.b
         c = self.c
@@ -329,6 +782,25 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         return q1, q2, q3, q4, q5
     
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
+        """
+        Compute the 5 q terms for the quadratic constraint using sparse matrix computations
+
+        Parameters
+        ----------
+        a : Array
+            The velocity of the point in the HMC trajectory
+        b : Array
+            The position of the point in the HMC trajectory
+
+        Returns
+        -------
+        Tuple[float, float, float, float, float]
+            q terms for the quadratic constraint
+
+        Notes
+        -----
+        These expressions are defined in Eqns 2.40-2.44 in Pakman and Paninski (2014)
+        """
         B = self.b
         c = self.c
         q1 = to_scalar(self.x_dot_A_dot_x(b) - self.x_dot_A_dot_x(a))
@@ -339,17 +811,66 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         return q1, q2, q3, q4, q5
 
     def hit_time_cpp(self, x: Array, xdot: Array) -> Array:
+        """
+        Compute the hit time for the quadratic constraint using compiled code
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            The hit time for the constraint
+
+        Notes
+        -----
+        Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
+        See <<Mathematica notebook>> for derivation
+        Only positive hit times are returned and any ghost solutions are filtered 
+        out at a later stage.
+
+        Compiled code is both written in C++ and optimized to remove all redundant computations
+        see paper for details.
+        """
         a, b = xdot, x
         pis = np.array([-2, 0, 2]).reshape(-1,1)*np.pi
         qs = self.compute_q(a, b)
         soln = lib.calc_all_solutions(*qs)
         s = np.ctypeslib.as_array(soln, shape=(1,8))
-        # print(s)
         lib.free_ptr(soln)
         s = (s + pis).flatten()
         return np.unique(s[s > 1e-7])
     
     def hit_time_py(self, x: Array, xdot: Array) -> Array:
+        """
+        Compute the hit time for the quadratic constraint using Python code
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            The hit time for the constraint
+
+        Notes
+        -----
+        Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
+        See <<Mathematica notebook>> for derivation
+        Only positive hit times are returned and any ghost solutions are filtered 
+        out at a later stage.
+
+        It is highly recommended to use the compiled version for performance reasons. 
+        This Python version is maintained for testing and validation purposes.
+        """
         a, b = xdot, x
         pis = np.array([-2, 0, 2]).reshape(-1,1)*np.pi
         qs = self.compute_q(a, b)
@@ -363,20 +884,3 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         return np.unique(s[s > 1e-7])
-    
-if __name__ == "__main__":
-    test_constr = QuadraticConstraint(np.array([[1, 0], [0, 1]]), np.array([0, 0]), 0, np.array([[1, 0], [0, 1]]))
-    x = np.array([1, 1]).reshape(2,1)
-    xdot = np.array([1, 0]).reshape(2,1)
-    import time 
-    start = time.time()
-    for _ in range(100000):
-        test_constr.hit_time_py(x, xdot)
-    py_time = time.time() - start
-    print(f'Python time: {py_time}')
-    start = time.time()
-    for _ in range(100000):
-        test_constr.hit_time_cpp(x, xdot)
-    cpp_time = time.time() - start
-    print(f'C++ time: {cpp_time}')
-    print(f'Speedup: {py_time / cpp_time}')
