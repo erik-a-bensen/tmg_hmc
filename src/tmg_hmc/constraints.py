@@ -240,7 +240,7 @@ class LinearConstraint(Constraint):
         Notes
         -----
         Hit time is computed by solving Eqn 2.26 in Pakman and Paninski (2014)
-        See <<Mathematica notebook>> for derivation
+        See resources/HMC_exact_soln.nb for derivation
         Due to the sum of inverse trig functions, we check the solution and 
         the solution +- pi to ensure we capture all hit times. 
 
@@ -582,7 +582,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         Notes
         -----
         Hit time is computed by solving Eqn 2.45 in Pakman and Paninski (2014)
-        See <<Mathematica notebook>> for derivation
+        See resources/HMC_exact_soln.nb for derivation
         Only positive hit times are returned and any ghost solutions are filtered 
         out at a later stage.
         """
@@ -829,7 +829,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Notes
         -----
         Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
-        See <<Mathematica notebook>> for derivation
+        See resources/HMC_exact_soln.nb for derivation
         Only positive hit times are returned and any ghost solutions are filtered 
         out at a later stage.
 
@@ -864,7 +864,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Notes
         -----
         Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
-        See <<Mathematica notebook>> for derivation
+        See resources/HMC_exact_soln.nb for derivation
         Only positive hit times are returned and any ghost solutions are filtered 
         out at a later stage.
 

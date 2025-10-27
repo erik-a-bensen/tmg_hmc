@@ -162,7 +162,7 @@ def soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -279,7 +279,7 @@ def soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -396,7 +396,7 @@ def soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -513,7 +513,7 @@ def soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -630,7 +630,7 @@ def soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -747,7 +747,7 @@ def soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -864,7 +864,7 @@ def soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
@@ -981,7 +981,7 @@ def soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     The solution is derived from the quartic equation associated with the quadratic constraint hit time
     given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using 
     Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.
-    See <<mathematica file>> for details.
+    See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
     use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
