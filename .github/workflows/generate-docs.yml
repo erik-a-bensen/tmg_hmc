@@ -1,0 +1,95 @@
+name: Generate API Documentation
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install package
+      run: |
+        pip install -e .
+    
+    - name: Generate API documentation
+      run: |
+        python << 'EOF'
+        import inspect
+        import importlib
+        
+        # Import your module
+        import tmg_hmc
+        
+        with open('API_DOCS.md', 'w') as f:
+            f.write('# TMG HMC API Documentation\n\n')
+            f.write('Auto-generated from Python docstrings.\n\n')
+            f.write('**Package:** `tmg_hmc` v0.0.2\n\n')
+            f.write('**Description:** This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.\n\n')
+            f.write('---\n\n')
+            
+            # Extract all functions and classes
+            for name, obj in inspect.getmembers(tmg_hmc):
+                # Skip private members and imports
+                if name.startswith('_'):
+                    continue
+                
+                # Document functions
+                if inspect.isfunction(obj):
+                    try:
+                        sig = inspect.signature(obj)
+                        f.write(f'## `{name}{sig}`\n\n')
+                        if obj.__doc__:
+                            f.write(f'{obj.__doc__}\n\n')
+                        f.write('---\n\n')
+                    except (ValueError, TypeError):
+                        # Skip if signature can't be extracted
+                        pass
+                
+                # Document classes
+                elif inspect.isclass(obj) and obj.__module__.startswith('tmg_hmc'):
+                    f.write(f'## Class: `{name}`\n\n')
+                    if obj.__doc__:
+                        f.write(f'{obj.__doc__}\n\n')
+                    
+                    # Document class methods
+                    for method_name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
+                        if not method_name.startswith('_') or method_name == '__init__':
+                            try:
+                                sig = inspect.signature(method)
+                                f.write(f'### `{method_name}{sig}`\n\n')
+                                if method.__doc__:
+                                    f.write(f'{method.__doc__}\n\n')
+                            except (ValueError, TypeError):
+                                pass
+                    
+                    f.write('---\n\n')
+        
+        print("Documentation generated successfully!")
+        EOF
+    
+    - name: Commit documentation
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add API_DOCS.md
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update API documentation [skip ci]"
+    
+    - name: Push changes
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
