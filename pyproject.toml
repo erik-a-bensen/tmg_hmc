@@ -17,8 +17,6 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "argparse",
     "torch",
-    "pickle",
     "scipy"
 ]
