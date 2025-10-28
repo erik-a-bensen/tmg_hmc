@@ -26,7 +26,9 @@ pip install .
 ### Development Installation
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
-cd tmg_hmc
+cd tmg_hmc/src/tmg_hmc/compiled # Need to precompile for editable install
+make 
+cd ../../..
 pip install -e ".[dev]"  # Includes testing dependencies
 ```
 
@@ -38,7 +40,7 @@ pip install -e ".[dev]"  # Includes testing dependencies
 
 **Build Requirements:**
 - C++ compiler (g++, clang, or MSVC)
-- make (Unix-like systems)
+- make
 
 ## Quick Start
 

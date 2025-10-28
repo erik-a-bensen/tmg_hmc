@@ -3,6 +3,7 @@ from cmath import acos
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 from torch import Tensor, sparse_coo
 from typing import TypeAlias, Tuple
+import platform
 import ctypes
 import os
 # ignore runtime warning
@@ -22,15 +23,44 @@ def get_shared_library() -> ctypes.CDLL:
 
     Notes
     -----
-    The shared library is expected to be located at 'compiled/calc_solutions.so'
-    relative to the base path of this module.
+    The shared library is expected to be located at 'compiled/calc_solutions.{ext}'
+    relative to the base path of this module, where {ext} is:
+    - 'so' on Linux
+    - 'dylib' on macOS
+    - 'dll' on Windows
 
     Shared Library Function:
     - calc_all_solutions: Calculates all solutions for the quadratic constraint hit times.
         - Arguments: Five double precision floating-point numbers.
         - Returns: A pointer to an array of double precision floating-point numbers.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the shared library is not found at the expected location.
+    OSError
+        If the operating system is unsupported.
     """
-    lib_path = os.path.join(base_path, 'compiled', 'calc_solutions.so')
+    # Determine shared library extension based on OS
+    system = platform.system()
+    if system == 'Linux':
+        lib_ext = 'so'
+    elif system == 'Darwin':  # macOS
+        lib_ext = 'dylib'
+    elif system == 'Windows':
+        lib_ext = 'dll'
+    else:
+        raise OSError(f"Unsupported operating system: {system}")
+    
+    lib_path = os.path.join(base_path, 'compiled', f'calc_solutions.{lib_ext}')
+    
+    if not os.path.exists(lib_path):
+        raise FileNotFoundError(
+            f"Shared library not found at {lib_path}. "
+            f"Please ensure the library has been compiled for your platform. "
+            f"Run 'make' in the {os.path.join(base_path, 'compiled')} directory."
+        )
+    
     lib = ctypes.CDLL(lib_path)
 
     # Define function arguments
