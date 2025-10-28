@@ -47,6 +47,8 @@ x0 = np.array([1,1]).reshape(-1,1) # Must satisfy our constraint
 samples = sampler.sample(x0, n_samples=100, burn_in=100)
 ```
 
+TODO: add plots and other examples.
+
 ## Documentation
 
 - [Full API Reference](API_DOCS.md) - Complete documentation of all functions and classes
