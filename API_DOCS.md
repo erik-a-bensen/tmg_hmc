@@ -7,7 +7,7 @@
 ## `TMGSampler` (class)
 
 ```python
-TMGSampler(mu: Array = None, Sigma: Array = None, T: float = 1.5707963267948966, gpu: bool = False, Sigma_half: Array = None)
+TMGSampler(mu: Array = None, Sigma: Array = None, T: float = np.pi / 2, gpu: bool = False, Sigma_half: Array = None)
 ```
 
 Hamiltonian Monte Carlo sampler for Multivariate Gaussian distributions<br>
