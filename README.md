@@ -70,13 +70,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 If you use this package in your research, please cite:
 
 **Software:**
-> Bensen, E. A. (2025). tmg_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints. *Journal of Open Source Software*. [To be updated upon acceptance]
+> Bensen, E. A. (2025). tmg_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints. *TBD*. [To be updated upon acceptance]
 
 **Methodology:**
 > Pakman, A., & Paninski, L. (2014). Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians. *Journal of Computational and Graphical Statistics*, 23(2), 518-542. https://doi.org/10.1080/10618600.2013.788448
 
 <details>
 <summary>BibTeX</summary>
+
 ```bibtex
 @article{Bensen2025tmghmc,
   title={tmg\_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints},
