@@ -1,7 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Tuple
-from abc import ABC, abstractmethod
+from typing import Protocol, Tuple, Protocol
 import torch
 from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements, get_shared_library
 from tmg_hmc.quadratic_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
@@ -12,11 +11,10 @@ eps = 1e-12
 # Load the shared library
 lib = get_shared_library()
 
-class Constraint(ABC):
+class Constraint(Protocol):
     """
     Abstract base class for constraints
     """
-    @abstractmethod
     def value(self, x: Array) -> float:
         """
         Compute the value of the constraint at x
@@ -54,21 +52,18 @@ class Constraint(ABC):
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
     
-    @abstractmethod
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
         """
         Compute the coefficients of the constraint equation along the trajectory defined by a and b
         """
         pass
 
-    @abstractmethod
     def hit_time(self, a: Array, b: Array) -> Array:
         """
         Compute the hit time of the constraint along the trajectory defined by a and b
         """
         pass
 
-    @abstractmethod
     def normal(self, x: Array) -> Array:
         """
         Compute the normal vector of the constraint at x
@@ -260,7 +255,7 @@ class LinearConstraint(Constraint):
 
 
 
-class BaseQuadraticConstraint(ABC, Constraint):
+class BaseQuadraticConstraint(Constraint):
     """
     Base class for quadratic constraints
     """
@@ -313,34 +308,28 @@ class BaseQuadraticConstraint(ABC, Constraint):
         self.normal = self.normal_sparse
         self.compute_q = self.compute_q_sparse
 
-    @abstractmethod
     def value_(self, x: Array) -> float:
-        """Abstract method for dense value computation"""
+        """Placeholder method for dense value computation"""
         pass
 
-    @abstractmethod
     def value_sparse(self, x: Array) -> float:
-        """Abstract method for sparse value computation"""
+        """Placeholder method for sparse value computation"""
         pass
 
-    @abstractmethod
     def normal_(self, x: Array) -> Array:
-        """Abstract method for dense normal vector computation"""
+        """Placeholder method for dense normal vector computation"""
         pass
 
-    @abstractmethod
     def normal_sparse(self, x: Array) -> Array:
-        """Abstract method for sparse normal vector computation"""
+        """Placeholder method for sparse normal vector computation"""
         pass
 
-    @abstractmethod
     def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:
-        """Abstract method for dense q term computation"""
+        """Placeholder method for dense q term computation"""
         pass
 
-    @abstractmethod
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:
-        """Abstract method for sparse q term computation"""
+        """Placeholder method for sparse q term computation"""
         pass
 
     @property 
