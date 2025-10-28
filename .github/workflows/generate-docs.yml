@@ -101,7 +101,7 @@ jobs:
         git diff --quiet && git diff --staged --quiet || git commit -m "Update API documentation [skip ci]"
     
     - name: Push changes
-      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev')
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
