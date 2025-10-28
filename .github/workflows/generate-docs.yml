@@ -48,6 +48,7 @@ jobs:
         import importlib
         import pkgutil
         import tmg_hmc
+        import ast
         from pathlib import Path
 
         # ============================================================
@@ -58,14 +59,53 @@ jobs:
             'tmg_hmc',
             'tmg_hmc.constraints',
             'tmg_hmc.utils',
+            'tmg_hmc.quadratic_solns',
             # Add more modules here in the order you want them documented
         ]
         # Set to None to auto-discover:
         # MODULES_TO_DOCUMENT = None
         # ============================================================
 
-        def format_default(default):
+        def get_source_defaults(func):
+            """Extract default values from source code to preserve expressions like np.pi."""
+            try:
+                source = inspect.getsource(func)
+                tree = ast.parse(source)
+                
+                # Find the function definition
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        defaults_dict = {}
+                        
+                        # Get the arguments
+                        args = node.args
+                        
+                        # Match defaults with argument names
+                        num_defaults = len(args.defaults)
+                        if num_defaults > 0:
+                            # Defaults are aligned to the right of args
+                            default_offset = len(args.args) - num_defaults
+                            for i, default in enumerate(args.defaults):
+                                arg_name = args.args[default_offset + i].arg
+                                defaults_dict[arg_name] = ast.unparse(default)
+                        
+                        # Handle keyword-only defaults
+                        for i, default in enumerate(args.kw_defaults):
+                            if default is not None:
+                                arg_name = args.kwonlyargs[i].arg
+                                defaults_dict[arg_name] = ast.unparse(default)
+                        
+                        return defaults_dict
+            except:
+                pass
+            return {}
+
+        def format_default(default, param_name=None, source_defaults=None):
             """Format default parameter values without evaluating numerical constants."""
+            # Try to get the original source representation first
+            if source_defaults and param_name in source_defaults:
+                return source_defaults[param_name]
+            
             if default == inspect.Parameter.empty:
                 return None
             
@@ -81,19 +121,37 @@ jobs:
             if isinstance(default, str):
                 return f'"{default}"'
             
-            # Handle numbers - use repr to get the original representation
-            if isinstance(default, (int, float)):
+            # Handle numbers - check if it's a known constant
+            if isinstance(default, float):
+                import math
+                # Check for common constants
+                if abs(default - math.pi) < 1e-10:
+                    return 'np.pi'
+                elif abs(default - math.e) < 1e-10:
+                    return 'np.e'
+                elif default == float('inf'):
+                    return 'np.inf'
+                elif default == float('-inf'):
+                    return '-np.inf'
+                else:
+                    return repr(default)
+            
+            if isinstance(default, int):
                 return repr(default)
             
             # For everything else, try to get a reasonable representation
             try:
-                # This will preserve things like np.pi, np.inf, etc.
                 return repr(default)
             except:
                 return '...'
 
-        def format_signature(sig):
+        def format_signature(sig, func=None):
             """Format signature to be more readable."""
+            # Get source defaults if available
+            source_defaults = {}
+            if func is not None:
+                source_defaults = get_source_defaults(func)
+            
             params = []
             for name, param in sig.parameters.items():
                 if name == 'self':
@@ -108,7 +166,7 @@ jobs:
                         annotation = ''
                 
                 # Get default value
-                default_str = format_default(param.default)
+                default_str = format_default(param.default, name, source_defaults)
                 
                 if default_str is None:
                     params.append(f"{name}{annotation}")
@@ -144,7 +202,7 @@ jobs:
                 if inspect.isfunction(obj):
                     try:
                         sig = inspect.signature(obj)
-                        formatted_sig = format_signature(sig)
+                        formatted_sig = format_signature(sig, obj)
                         f.write(f'### `{name}{formatted_sig}`\n\n')
                         if obj.__doc__:
                             f.write(f'{obj.__doc__}\n\n')
@@ -169,7 +227,7 @@ jobs:
                             continue
                         try:
                             sig = inspect.signature(method)
-                            formatted_sig = format_signature(sig)
+                            formatted_sig = format_signature(sig, method)
                             f.write(f'#### `{method_name}{formatted_sig}`\n\n')
                             if method.__doc__:
                                 f.write(f'{method.__doc__}\n\n')
