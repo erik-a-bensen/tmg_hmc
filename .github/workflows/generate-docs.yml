@@ -58,7 +58,6 @@ jobs:
             'tmg_hmc',
             'tmg_hmc.constraints',
             'tmg_hmc.utils',
-            'tmg_hmc.quadratic_solns',
             # Add more modules here in the order you want them documented
         ]
         # Set to None to auto-discover:
@@ -122,18 +121,27 @@ jobs:
             """Document all classes and functions in a module."""
             documented_items = []
             
+            # Check if this is the top-level package
+            is_top_level = module_name == 'tmg_hmc'
+            
             # Get all members of the module
             for name, obj in inspect.getmembers(module):
-                # Skip private members, imports from other modules
+                # Skip private members
                 if name.startswith('_'):
                     continue
                 
-                # Only document items that are actually defined in this module
-                if hasattr(obj, '__module__') and not obj.__module__.startswith('tmg_hmc'):
-                    continue
+                # Skip imports from other packages (not tmg_hmc)
+                if hasattr(obj, '__module__'):
+                    obj_module = obj.__module__
+                    if not obj_module.startswith('tmg_hmc'):
+                        continue
+                    
+                    # For non-top-level modules, only document items defined in that specific module
+                    if not is_top_level and obj_module != module.__name__:
+                        continue
                 
                 # Document functions
-                if inspect.isfunction(obj) and obj.__module__ == module.__name__:
+                if inspect.isfunction(obj):
                     try:
                         sig = inspect.signature(obj)
                         formatted_sig = format_signature(sig)
@@ -147,7 +155,7 @@ jobs:
                         pass
                 
                 # Document classes
-                elif inspect.isclass(obj) and obj.__module__ == module.__name__:
+                elif inspect.isclass(obj):
                     f.write(f'### Class: `{name}`\n\n')
                     if obj.__doc__:
                         f.write(f'{obj.__doc__}\n\n')
@@ -197,8 +205,8 @@ jobs:
             
             # Write table of contents
             for modname in modules_info:
-                module_display = modname.replace('tmg_hmc.', '')
-                anchor = module_display.replace('.', '')
+                module_display = modname.replace('tmg_hmc.', '') if modname != 'tmg_hmc' else 'tmg_hmc (main)'
+                anchor = modname.replace('.', '')
                 f.write(f'- [{module_display}](#{anchor})\n')
             
             f.write('\n---\n\n')
@@ -207,7 +215,7 @@ jobs:
             for modname in modules_info:
                 try:
                     module = importlib.import_module(modname)
-                    module_display = modname.replace('tmg_hmc.', '')
+                    module_display = modname.replace('tmg_hmc.', '') if modname != 'tmg_hmc' else 'tmg_hmc (main)'
                     
                     f.write(f'## {module_display}\n\n')
                     
