@@ -94,16 +94,17 @@ jobs:
             return '\n'.join(result)
 
         def get_source_defaults(func):
-            """Extract default values from source code."""
+            """Extract default values from source code, preserving expressions."""
             try:
                 source = inspect.getsource(func)
                 tree = ast.parse(source)
                 
                 for node in ast.walk(tree):
-                    if isinstance(node, ast.FunctionDef):
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         defaults_dict = {}
                         args = node.args
                         
+                        # Handle positional defaults
                         num_defaults = len(args.defaults)
                         if num_defaults > 0:
                             default_offset = len(args.args) - num_defaults
@@ -111,20 +112,24 @@ jobs:
                                 arg_name = args.args[default_offset + i].arg
                                 defaults_dict[arg_name] = ast.unparse(default)
                         
+                        # Handle keyword-only defaults
                         for i, default in enumerate(args.kw_defaults):
                             if default is not None:
                                 arg_name = args.kwonlyargs[i].arg
                                 defaults_dict[arg_name] = ast.unparse(default)
                         
                         return defaults_dict
-            except:
-                pass
+            except Exception as e:
+                print(f"Warning: Could not parse source for {func.__name__}: {e}")
             return {}
 
         def format_default(default, param_name=None, source_defaults=None):
-            """Format default parameter values."""
-            if source_defaults and param_name in source_defaults:
-                return source_defaults[param_name]
+            """Format default parameter values, preferring source representation."""
+            # ALWAYS try source defaults first
+            if source_defaults and param_name and param_name in source_defaults:
+                source_val = source_defaults[param_name]
+                source_val = source_val.replace('numpy.', 'np.')
+                return source_val
             
             if default == inspect.Parameter.empty:
                 return None
@@ -136,10 +141,15 @@ jobs:
             if isinstance(default, str):
                 return f'"{default}"'
             
+            # Fallback for numerical values - try to detect common constants
             if isinstance(default, float):
                 import math
                 if abs(default - math.pi) < 1e-10:
                     return 'np.pi'
+                elif abs(default - math.pi / 2) < 1e-10:
+                    return 'np.pi / 2'
+                elif abs(default - 2 * math.pi) < 1e-10:
+                    return '2 * np.pi'
                 elif abs(default - math.e) < 1e-10:
                     return 'np.e'
                 elif default == float('inf'):
@@ -191,7 +201,8 @@ jobs:
                     return_annotation = f' -> {ret_ann}'
                 
                 return f'({", ".join(params)}){return_annotation}'
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                print(f"Warning: Could not get signature: {e}")
                 return '(...)'
 
         def clean_constructor_signature(func, class_name):
@@ -338,11 +349,14 @@ jobs:
             
             return docs
 
+        # Get package version
+        package_version = getattr(tmg_hmc, '__version__', 'unknown')
+
         # Generate documentation
         all_docs = []
         all_docs.append('# API Reference')
         all_docs.append('')
-        all_docs.append('> **Package:** `tmg_hmc` v0.0.2')
+        all_docs.append(f'> **Package:** `tmg_hmc` v{package_version}')
         all_docs.append('>')
         all_docs.append('> This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.')
         all_docs.append('')
@@ -352,10 +366,8 @@ jobs:
                 module = importlib.import_module(modname)
                 
                 if modname == 'tmg_hmc':
-                    # Main module - no separator
                     pass
                 else:
-                    # Submodules get separators
                     all_docs.append('---')
                     all_docs.append('')
                     module_display = modname.replace('tmg_hmc.', '').replace('_', ' ').title()
