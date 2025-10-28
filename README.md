@@ -7,6 +7,8 @@
 
 > **⚠️ Development Notice**: This package is in active development. The API may change significantly between versions until v1.0.0. Use in production environments is not recommended. -->
 
+This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
+
 ## Installation
 Within the desired installation environment run the following:
 ```bash
@@ -23,35 +25,26 @@ pip install .
 
 ## Quick Start
 
-### Basic Usage
+### Linearly Constrained Gaussian
+To sample a 2d standard normal with y component restricted to be positive run the following:
 
 ```python
-from mpitools import setup_mpi, broadcast_from_main, gather_to_main, eval_on_main
+import numpy as np
+from tmg_hmc import TMGSampler 
 
-# Initialize MPI environment
-comm, rank, size = setup_mpi()
+# Define the mean and covariance of the untruncated distribution
+mu = np.zeros(2,1)
+Sigma = np.identity(2)
+sampler = TMGSampler(mu, Sigma)
 
-# Execute only on rank 0, broadcast result to all processes
-@broadcast_from_main()
-def load_config():
-    return {"num_pointss": 100}
+# Define the constraint y >= 0
+# Corresponds to A = 0, f = [0, 1], c = 0
+f = np.array([0,1]).reshape(-1,1)
+sampler.add_constraint(f=f)
 
-# Execute on all processes, gather results to rank 0
-@gather_to_main()
-def compute_partial_sum(config):
-    n = config['num_points']
-    return sum(range(rank * n, (rank + 1) * n))
-
-# Execute only on rank 0
-@eval_on_main()
-def save_results(data):
-    with open("results.txt", "w") as f:
-        f.write(str(data))
-
-# Usage
-config = load_config()  # Same config on all processes
-partial_sums = compute_partial_sum(config)  # List of sums on rank 0, None elsewhere
-save_results(partial_sums)  # Only saves on rank 0
+# Sample 100 samples 
+x0 = np.array([1,1]).reshape(-1,1) # Must satisfy our constraint
+samples = sampler.sample(x0, n_samples=100, burn_in=100)
 ```
 
 ## Documentation
