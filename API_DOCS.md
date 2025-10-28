@@ -719,7 +719,7 @@ Array<br>
 ### `build_from_dict`
 
 ```python
-build_from_dict(d: dict, gpu: bool) -> SimpleQuadraticConstraint
+build_from_dict(d: dict, gpu: bool) -> 'QuadraticConstraint'
 ```
 
 Build a QuadraticConstraint from a dictionary representation
