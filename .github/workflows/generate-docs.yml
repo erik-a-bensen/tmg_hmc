@@ -46,52 +46,183 @@ jobs:
         python << 'EOF'
         import inspect
         import importlib
-        
-        # Import your module
+        import pkgutil
         import tmg_hmc
-        
-        with open('API_DOCS.md', 'w') as f:
-            f.write('# TMG HMC API Documentation\n\n')
-            f.write('Auto-generated from Python docstrings.\n\n')
-            f.write('**Package:** `tmg_hmc` v0.0.2\n\n')
-            f.write('**Description:** This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.\n\n')
-            f.write('---\n\n')
+        from pathlib import Path
+
+        # ============================================================
+        # CONFIGURE MODULES HERE - Edit this list to control order
+        # Set to None to auto-discover all modules
+        # ============================================================
+        MODULES_TO_DOCUMENT = [
+            'tmg_hmc',
+            'tmg_hmc.constraints',
+            'tmg_hmc.utils',
+            'tmg_hmc.quadratic_solns',
+            # Add more modules here in the order you want them documented
+        ]
+        # Set to None to auto-discover:
+        # MODULES_TO_DOCUMENT = None
+        # ============================================================
+
+        def format_default(default):
+            """Format default parameter values without evaluating numerical constants."""
+            if default == inspect.Parameter.empty:
+                return None
             
-            # Extract all functions and classes
-            for name, obj in inspect.getmembers(tmg_hmc):
-                # Skip private members and imports
+            # Handle None
+            if default is None:
+                return 'None'
+            
+            # Handle booleans
+            if isinstance(default, bool):
+                return str(default)
+            
+            # Handle strings
+            if isinstance(default, str):
+                return f'"{default}"'
+            
+            # Handle numbers - use repr to get the original representation
+            if isinstance(default, (int, float)):
+                return repr(default)
+            
+            # For everything else, try to get a reasonable representation
+            try:
+                # This will preserve things like np.pi, np.inf, etc.
+                return repr(default)
+            except:
+                return '...'
+
+        def format_signature(sig):
+            """Format signature to be more readable."""
+            params = []
+            for name, param in sig.parameters.items():
+                if name == 'self':
+                    continue
+                
+                # Get type annotation if available
+                annotation = ''
+                if param.annotation != inspect.Parameter.empty:
+                    try:
+                        annotation = f': {param.annotation.__name__}'
+                    except:
+                        annotation = ''
+                
+                # Get default value
+                default_str = format_default(param.default)
+                
+                if default_str is None:
+                    params.append(f"{name}{annotation}")
+                else:
+                    params.append(f"{name}{annotation}={default_str}")
+            
+            return f"({', '.join(params)})"
+
+        def document_module(module, f, module_name):
+            """Document all classes and functions in a module."""
+            documented_items = []
+            
+            # Get all members of the module
+            for name, obj in inspect.getmembers(module):
+                # Skip private members, imports from other modules
                 if name.startswith('_'):
                     continue
                 
+                # Only document items that are actually defined in this module
+                if hasattr(obj, '__module__') and not obj.__module__.startswith('tmg_hmc'):
+                    continue
+                
                 # Document functions
-                if inspect.isfunction(obj):
+                if inspect.isfunction(obj) and obj.__module__ == module.__name__:
                     try:
                         sig = inspect.signature(obj)
-                        f.write(f'## `{name}{sig}`\n\n')
+                        formatted_sig = format_signature(sig)
+                        f.write(f'### `{name}{formatted_sig}`\n\n')
                         if obj.__doc__:
                             f.write(f'{obj.__doc__}\n\n')
-                        f.write('---\n\n')
+                        else:
+                            f.write('*No documentation available.*\n\n')
+                        documented_items.append(name)
                     except (ValueError, TypeError):
                         pass
                 
                 # Document classes
-                elif inspect.isclass(obj) and obj.__module__.startswith('tmg_hmc'):
-                    f.write(f'## Class: `{name}`\n\n')
+                elif inspect.isclass(obj) and obj.__module__ == module.__name__:
+                    f.write(f'### Class: `{name}`\n\n')
                     if obj.__doc__:
                         f.write(f'{obj.__doc__}\n\n')
+                    else:
+                        f.write('*No documentation available.*\n\n')
                     
                     # Document class methods
+                    methods_documented = []
                     for method_name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
-                        if not method_name.startswith('_') or method_name == '__init__':
-                            try:
-                                sig = inspect.signature(method)
-                                f.write(f'### `{method_name}{sig}`\n\n')
-                                if method.__doc__:
-                                    f.write(f'{method.__doc__}\n\n')
-                            except (ValueError, TypeError):
-                                pass
+                        if method_name.startswith('_') and method_name != '__init__':
+                            continue
+                        try:
+                            sig = inspect.signature(method)
+                            formatted_sig = format_signature(sig)
+                            f.write(f'#### `{method_name}{formatted_sig}`\n\n')
+                            if method.__doc__:
+                                f.write(f'{method.__doc__}\n\n')
+                            else:
+                                f.write('*No documentation available.*\n\n')
+                            methods_documented.append(method_name)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    documented_items.append(name)
+            
+            return documented_items
+
+        with open('API_DOCS.md', 'w') as f:
+            f.write('# TMG HMC API Documentation\n\n')
+            f.write('**Package:** `tmg_hmc` v0.0.2\n\n')
+            f.write('**Description:** This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.\n\n')
+            f.write('---\n\n')
+            f.write('## Table of Contents\n\n')
+            
+            # Determine which modules to document
+            if MODULES_TO_DOCUMENT is None:
+                # Auto-discover all submodules
+                package_path = Path(tmg_hmc.__file__).parent
+                modules_info = []
+                for importer, modname, ispkg in pkgutil.walk_packages([str(package_path)], prefix='tmg_hmc.'):
+                    if not modname.startswith('tmg_hmc._'):  # Skip private modules
+                        modules_info.append(modname)
+                modules_info = sorted(modules_info)
+            else:
+                # Use manually specified modules
+                modules_info = MODULES_TO_DOCUMENT
+            
+            # Write table of contents
+            for modname in modules_info:
+                module_display = modname.replace('tmg_hmc.', '')
+                anchor = module_display.replace('.', '')
+                f.write(f'- [{module_display}](#{anchor})\n')
+            
+            f.write('\n---\n\n')
+            
+            # Document each module
+            for modname in modules_info:
+                try:
+                    module = importlib.import_module(modname)
+                    module_display = modname.replace('tmg_hmc.', '')
+                    
+                    f.write(f'## {module_display}\n\n')
+                    
+                    if module.__doc__:
+                        f.write(f'{module.__doc__}\n\n')
+                    
+                    documented = document_module(module, f, modname)
+                    
+                    if not documented:
+                        f.write('*No public API documented.*\n\n')
                     
                     f.write('---\n\n')
+                    
+                except Exception as e:
+                    print(f"Warning: Could not document {modname}: {e}")
         
         print("Documentation generated successfully!")
         EOF
