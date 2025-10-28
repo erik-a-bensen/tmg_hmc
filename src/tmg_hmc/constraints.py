@@ -631,12 +631,8 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             self._setup_values(A, S)
         if self.compiled:
             self.hit_time = self.hit_time_cpp
-            self.A_dot_x = self.A_dot_x_cpp
-            self.x_dot_A_dot_x = self.x_dot_A_dot_x_cpp
         else:
             self.hit_time = self.hit_time_py
-            self.A_dot_x = self.A_dot_x_py
-            self.x_dot_A_dot_x = self.x_dot_A_dot_x_py
 
     @classmethod 
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
