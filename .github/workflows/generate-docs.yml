@@ -49,6 +49,7 @@ jobs:
         import pkgutil
         import tmg_hmc
         import ast
+        import re
         from pathlib import Path
 
         # ============================================================
@@ -60,36 +61,56 @@ jobs:
             'tmg_hmc.constraints',
             'tmg_hmc.utils',
             'tmg_hmc.quadratic_solns',
-            # Add more modules here in the order you want them documented
         ]
-        # Set to None to auto-discover:
-        # MODULES_TO_DOCUMENT = None
         # ============================================================
 
+        def clean_docstring(docstring):
+            """Clean and format docstring for markdown display."""
+            if not docstring:
+                return None
+            
+            cleaned = inspect.cleandoc(docstring)
+            lines = cleaned.split('\n')
+            result = []
+            
+            for i, line in enumerate(lines):
+                if line.strip() == '':
+                    result.append('')
+                else:
+                    stripped = line.lstrip()
+                    leading_spaces = len(line) - len(stripped)
+                    
+                    if leading_spaces > 0:
+                        indent = '&nbsp;' * (leading_spaces * 2)
+                        line_content = f'{indent}{stripped}'
+                    else:
+                        line_content = stripped
+                    
+                    if i < len(lines) - 1 and lines[i + 1].strip() != '':
+                        line_content += '<br>'
+                    
+                    result.append(line_content)
+            
+            return '\n'.join(result)
+
         def get_source_defaults(func):
-            """Extract default values from source code to preserve expressions like np.pi."""
+            """Extract default values from source code."""
             try:
                 source = inspect.getsource(func)
                 tree = ast.parse(source)
                 
-                # Find the function definition
                 for node in ast.walk(tree):
                     if isinstance(node, ast.FunctionDef):
                         defaults_dict = {}
-                        
-                        # Get the arguments
                         args = node.args
                         
-                        # Match defaults with argument names
                         num_defaults = len(args.defaults)
                         if num_defaults > 0:
-                            # Defaults are aligned to the right of args
                             default_offset = len(args.args) - num_defaults
                             for i, default in enumerate(args.defaults):
                                 arg_name = args.args[default_offset + i].arg
                                 defaults_dict[arg_name] = ast.unparse(default)
                         
-                        # Handle keyword-only defaults
                         for i, default in enumerate(args.kw_defaults):
                             if default is not None:
                                 arg_name = args.kwonlyargs[i].arg
@@ -101,30 +122,22 @@ jobs:
             return {}
 
         def format_default(default, param_name=None, source_defaults=None):
-            """Format default parameter values without evaluating numerical constants."""
-            # Try to get the original source representation first
+            """Format default parameter values."""
             if source_defaults and param_name in source_defaults:
                 return source_defaults[param_name]
             
             if default == inspect.Parameter.empty:
                 return None
             
-            # Handle None
             if default is None:
                 return 'None'
-            
-            # Handle booleans
             if isinstance(default, bool):
                 return str(default)
-            
-            # Handle strings
             if isinstance(default, str):
                 return f'"{default}"'
             
-            # Handle numbers - check if it's a known constant
             if isinstance(default, float):
                 import math
-                # Check for common constants
                 if abs(default - math.pi) < 1e-10:
                     return 'np.pi'
                 elif abs(default - math.e) < 1e-10:
@@ -139,156 +152,224 @@ jobs:
             if isinstance(default, int):
                 return repr(default)
             
-            # For everything else, try to get a reasonable representation
             try:
                 return repr(default)
             except:
                 return '...'
 
-        def format_signature(sig, func=None):
-            """Format signature to be more readable."""
-            # Get source defaults if available
-            source_defaults = {}
-            if func is not None:
+        def clean_signature(func):
+            """Format function signature."""
+            try:
+                sig = inspect.signature(func)
                 source_defaults = get_source_defaults(func)
-            
-            params = []
-            for name, param in sig.parameters.items():
-                if name == 'self':
-                    continue
+                params = []
                 
-                # Get type annotation if available
-                annotation = ''
-                if param.annotation != inspect.Parameter.empty:
-                    try:
-                        annotation = f': {param.annotation.__name__}'
-                    except:
-                        annotation = ''
+                for param_name, param in sig.parameters.items():
+                    if param_name == 'self':
+                        continue
+                    
+                    param_str = param_name
+                    
+                    if param.annotation != inspect.Parameter.empty:
+                        try:
+                            annotation = param.annotation.__name__
+                        except:
+                            annotation = str(param.annotation)
+                        annotation = annotation.replace('typing.', '')
+                        param_str += f': {annotation}'
+                    
+                    default_str = format_default(param.default, param_name, source_defaults)
+                    if default_str is not None:
+                        param_str += f' = {default_str}'
+                    
+                    params.append(param_str)
                 
-                # Get default value
-                default_str = format_default(param.default, name, source_defaults)
+                return_annotation = ''
+                if sig.return_annotation != inspect.Signature.empty:
+                    ret_ann = str(sig.return_annotation)
+                    ret_ann = ret_ann.replace('typing.', '')
+                    return_annotation = f' -> {ret_ann}'
                 
-                if default_str is None:
-                    params.append(f"{name}{annotation}")
-                else:
-                    params.append(f"{name}{annotation}={default_str}")
-            
-            return f"({', '.join(params)})"
+                return f'({", ".join(params)}){return_annotation}'
+            except (ValueError, TypeError):
+                return '(...)'
 
-        def document_module(module, f, module_name):
-            """Document all classes and functions in a module."""
-            documented_items = []
+        def clean_constructor_signature(func, class_name):
+            """Format constructor signature."""
+            try:
+                sig = inspect.signature(func)
+                source_defaults = get_source_defaults(func)
+                params = []
+                
+                for param_name, param in sig.parameters.items():
+                    if param_name == 'self':
+                        continue
+                    
+                    param_str = param_name
+                    
+                    if param.annotation != inspect.Parameter.empty:
+                        try:
+                            annotation = param.annotation.__name__
+                        except:
+                            annotation = str(param.annotation)
+                        annotation = annotation.replace('typing.', '')
+                        param_str += f': {annotation}'
+                    
+                    default_str = format_default(param.default, param_name, source_defaults)
+                    if default_str is not None:
+                        param_str += f' = {default_str}'
+                    
+                    params.append(param_str)
+                
+                return f'{class_name}({", ".join(params)})'
+            except (ValueError, TypeError):
+                return f'{class_name}(...)'
+
+        def document_class(cls, class_name):
+            """Document a class with its methods."""
+            docs = []
             
-            # Check if this is the top-level package
+            docs.append(f'## `{class_name}` (class)')
+            docs.append('')
+            
+            # Add constructor signature
+            if hasattr(cls, '__init__'):
+                try:
+                    constructor_sig = clean_constructor_signature(cls.__init__, class_name)
+                    docs.append('```python')
+                    docs.append(constructor_sig)
+                    docs.append('```')
+                    docs.append('')
+                except (AttributeError, TypeError):
+                    docs.append('```python')
+                    docs.append(f'{class_name}(...)')
+                    docs.append('```')
+                    docs.append('')
+            
+            # Handle docstrings
+            class_docstring = clean_docstring(cls.__doc__)
+            init_docstring = None
+            if hasattr(cls, '__init__'):
+                init_docstring = clean_docstring(cls.__init__.__doc__)
+            
+            if class_docstring and init_docstring:
+                docs.append(class_docstring)
+                docs.append('')
+                docs.append('**Constructor:**')
+                docs.append('')
+                docs.append(init_docstring)
+                docs.append('')
+            elif class_docstring:
+                docs.append(class_docstring)
+                docs.append('')
+            elif init_docstring:
+                docs.append(init_docstring)
+                docs.append('')
+            else:
+                docs.append('*No description available.*')
+                docs.append('')
+            
+            # Document public methods
+            methods = []
+            for method_name in dir(cls):
+                if not method_name.startswith('_'):
+                    try:
+                        method = getattr(cls, method_name)
+                        if callable(method) and method.__doc__:
+                            sig = clean_signature(method)
+                            cleaned_method_doc = clean_docstring(method.__doc__)
+                            if cleaned_method_doc:
+                                methods.append(f'### `{method_name}`')
+                                methods.append('')
+                                methods.append('```python')
+                                methods.append(f'{method_name}{sig}')
+                                methods.append('```')
+                                methods.append('')
+                                methods.append(cleaned_method_doc)
+                                methods.append('')
+                    except (AttributeError, TypeError):
+                        continue
+            
+            if methods:
+                docs.append('### Methods')
+                docs.append('')
+                docs.extend(methods)
+            
+            return docs
+
+        def document_module(module, module_name):
+            """Document a module."""
+            docs = []
             is_top_level = module_name == 'tmg_hmc'
             
-            # Get all members of the module
-            for name, obj in inspect.getmembers(module):
-                # Skip private members
-                if name.startswith('_'):
-                    continue
-                
-                # Skip imports from other packages (not tmg_hmc)
-                if hasattr(obj, '__module__'):
-                    obj_module = obj.__module__
-                    if not obj_module.startswith('tmg_hmc'):
-                        continue
-                    
-                    # For non-top-level modules, only document items defined in that specific module
-                    if not is_top_level and obj_module != module.__name__:
-                        continue
-                
-                # Document functions
-                if inspect.isfunction(obj):
-                    try:
-                        sig = inspect.signature(obj)
-                        formatted_sig = format_signature(sig, obj)
-                        f.write(f'### `{name}{formatted_sig}`\n\n')
-                        if obj.__doc__:
-                            f.write(f'{obj.__doc__}\n\n')
-                        else:
-                            f.write('*No documentation available.*\n\n')
-                        documented_items.append(name)
-                    except (ValueError, TypeError):
-                        pass
-                
-                # Document classes
-                elif inspect.isclass(obj):
-                    f.write(f'### Class: `{name}`\n\n')
-                    if obj.__doc__:
-                        f.write(f'{obj.__doc__}\n\n')
-                    else:
-                        f.write('*No documentation available.*\n\n')
-                    
-                    # Document class methods
-                    methods_documented = []
-                    for method_name, method in inspect.getmembers(obj, predicate=inspect.isfunction):
-                        if method_name.startswith('_') and method_name != '__init__':
-                            continue
-                        try:
-                            sig = inspect.signature(method)
-                            formatted_sig = format_signature(sig, method)
-                            f.write(f'#### `{method_name}{formatted_sig}`\n\n')
-                            if method.__doc__:
-                                f.write(f'{method.__doc__}\n\n')
-                            else:
-                                f.write('*No documentation available.*\n\n')
-                            methods_documented.append(method_name)
-                        except (ValueError, TypeError):
-                            pass
-                    
-                    documented_items.append(name)
+            # Use __all__ if available
+            if hasattr(module, '__all__'):
+                names_to_document = module.__all__
+            else:
+                names_to_document = [name for name in dir(module) if not name.startswith('_')]
             
-            return documented_items
+            for name in names_to_document:
+                if hasattr(module, name):
+                    obj = getattr(module, name)
+                    
+                    # Skip objects from other packages
+                    if hasattr(obj, '__module__'):
+                        obj_module = obj.__module__
+                        if not obj_module.startswith('tmg_hmc'):
+                            continue
+                        if not is_top_level and obj_module != module.__name__:
+                            continue
+                    
+                    if inspect.isclass(obj):
+                        class_docs = document_class(obj, name)
+                        docs.extend(class_docs)
+                    elif callable(obj) and obj.__doc__:
+                        sig = clean_signature(obj)
+                        cleaned_func_doc = clean_docstring(obj.__doc__)
+                        if cleaned_func_doc:
+                            docs.append(f'## `{name}`')
+                            docs.append('')
+                            docs.append('```python')
+                            docs.append(f'{name}{sig}')
+                            docs.append('```')
+                            docs.append('')
+                            docs.append(cleaned_func_doc)
+                            docs.append('')
+            
+            return docs
+
+        # Generate documentation
+        all_docs = []
+        all_docs.append('# API Reference')
+        all_docs.append('')
+        all_docs.append('> **Package:** `tmg_hmc` v0.0.2')
+        all_docs.append('>')
+        all_docs.append('> This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.')
+        all_docs.append('')
+
+        for modname in MODULES_TO_DOCUMENT:
+            try:
+                module = importlib.import_module(modname)
+                
+                if modname == 'tmg_hmc':
+                    # Main module - no separator
+                    pass
+                else:
+                    # Submodules get separators
+                    all_docs.append('---')
+                    all_docs.append('')
+                    module_display = modname.replace('tmg_hmc.', '').replace('_', ' ').title()
+                    all_docs.append(f'# {module_display} Module')
+                    all_docs.append('')
+                
+                module_docs = document_module(module, modname)
+                all_docs.extend(module_docs)
+                
+            except Exception as e:
+                print(f"Warning: Could not document {modname}: {e}")
 
         with open('API_DOCS.md', 'w') as f:
-            f.write('# TMG HMC API Documentation\n\n')
-            f.write('**Package:** `tmg_hmc` v0.0.2\n\n')
-            f.write('**Description:** This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.\n\n')
-            f.write('---\n\n')
-            f.write('## Table of Contents\n\n')
-            
-            # Determine which modules to document
-            if MODULES_TO_DOCUMENT is None:
-                # Auto-discover all submodules
-                package_path = Path(tmg_hmc.__file__).parent
-                modules_info = []
-                for importer, modname, ispkg in pkgutil.walk_packages([str(package_path)], prefix='tmg_hmc.'):
-                    if not modname.startswith('tmg_hmc._'):  # Skip private modules
-                        modules_info.append(modname)
-                modules_info = sorted(modules_info)
-            else:
-                # Use manually specified modules
-                modules_info = MODULES_TO_DOCUMENT
-            
-            # Write table of contents
-            for modname in modules_info:
-                module_display = modname.replace('tmg_hmc.', '') if modname != 'tmg_hmc' else 'tmg_hmc (main)'
-                anchor = modname.replace('.', '')
-                f.write(f'- [{module_display}](#{anchor})\n')
-            
-            f.write('\n---\n\n')
-            
-            # Document each module
-            for modname in modules_info:
-                try:
-                    module = importlib.import_module(modname)
-                    module_display = modname.replace('tmg_hmc.', '') if modname != 'tmg_hmc' else 'tmg_hmc (main)'
-                    
-                    f.write(f'## {module_display}\n\n')
-                    
-                    if module.__doc__:
-                        f.write(f'{module.__doc__}\n\n')
-                    
-                    documented = document_module(module, f, modname)
-                    
-                    if not documented:
-                        f.write('*No public API documented.*\n\n')
-                    
-                    f.write('---\n\n')
-                    
-                except Exception as e:
-                    print(f"Warning: Could not document {modname}: {e}")
+            f.write('\n'.join(all_docs))
         
         print("Documentation generated successfully!")
         EOF
