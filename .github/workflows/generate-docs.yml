@@ -2,9 +2,9 @@ name: Generate API Documentation
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -19,8 +19,22 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
     
-    - name: Install package
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential g++ make
+    
+    - name: Install package (will compile C++ automatically)
       run: |
         pip install -e .
     
@@ -55,7 +69,6 @@ jobs:
                             f.write(f'{obj.__doc__}\n\n')
                         f.write('---\n\n')
                     except (ValueError, TypeError):
-                        # Skip if signature can't be extracted
                         pass
                 
                 # Document classes
