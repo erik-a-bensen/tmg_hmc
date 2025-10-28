@@ -116,12 +116,10 @@ samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 
 ## How It Works
 
-The algorithm uses Hamiltonian Monte Carlo with **exact** bounce times at constraint boundaries:
-
-1. **Hamiltonian Dynamics**: Particles follow deterministic Hamiltonian trajectories
-2. **Exact Bounces**: When a trajectory hits a constraint boundary, the algorithm computes the exact bounce time by solving the quartic equation analytically
-3. **Specular Reflection**: Momentum is reflected off constraint boundaries to maintain detailed balance
-4. **No Discretization Error**: Unlike standard HMC, there's no discretization error because all events are computed exactly
+The algorithm uses Hamiltonian Monte Carlo with
+1. **Analytic Hamiltonian Dynamics**: Particles follow deterministic Hamiltonian trajectories that are analytically computable
+2. **Exact Bounces**: When a trajectory hits a constraint boundary, the algorithm computes the exact bounce time by solving the quartic equation for the hit time analytically
+4. **Perfect Acceptance Probability**: Unlike standard HMC, there's no integration error to solve the Hamiltonian dynamics. This means the acceptance probability is always 1.
 
 See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for mathematical details.
 
@@ -131,12 +129,12 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 - **Compiled Hit Times**: For quadratic constraints the optimized and compiled hit time calculation provides a significant speedup.
 
 ## Examples
-
-See the `examples/` directory for:
+TO BE IMPLEMENTED
+<!-- See the `examples/` directory for:
 - Linear constraint examples
 - Quadratic constraint examples  
 - High-dimensional sampling
-- Comparison with approximate methods
+- Comparison with approximate methods -->
 
 ## Testing
 
@@ -155,14 +153,6 @@ pytest tests/
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-**Development setup:**
-```bash
-git clone https://github.com/erik-a-bensen/tmg_hmc.git
-cd tmg_hmc
-pip install -e ".[dev]"
-pre-commit install
-```
-
 <!-- ## Related Projects
 - [tmg](https://github.com/brunzema/truncated-mvn-sampler) - R package for approximate truncated Gaussian sampling -->
 
@@ -175,7 +165,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this package in your research, please cite:
 
 **Software:**
-> Bensen, E. A. (2025). tmg_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints. *Journal of Open Source Software*. [To be updated upon acceptance]
+> Bensen, E. A. (2025). tmg_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints. *TBD*. [To be updated upon acceptance]
 
 **Methodology:**
 > Pakman, A., & Paninski, L. (2014). Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians. *Journal of Computational and Graphical Statistics*, 23(2), 518-542. https://doi.org/10.1080/10618600.2013.788448
@@ -187,7 +177,7 @@ If you use this package in your research, please cite:
 @article{Bensen2025tmghmc,
   title={tmg\_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints},
   author={Bensen, Erik A.},
-  journal={Journal of Open Source Software},
+  journal={TBD},
   year={2025},
   note={[To be updated upon acceptance]}
 }
