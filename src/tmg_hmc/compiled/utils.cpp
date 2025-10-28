@@ -1057,52 +1057,52 @@ double soln8(double q1, double q2, double q3, double q4, double q5){
 };
 
 // Example usage
-int main() {
-    double q1 = -1.;
-    double q2 = -2.;
-    double q3 = -3.;
-    double q4 = -4.;
-    double q5 = 5.;
+// int main() {
+//     double q1 = -1.;
+//     double q2 = -2.;
+//     double q3 = -3.;
+//     double q4 = -4.;
+//     double q5 = 5.;
     
-    // Calculate all solutions at once
-    double* solutions = calc_all_solutions(q1, q2, q3, q4, q5);
+//     // Calculate all solutions at once
+//     double* solutions = calc_all_solutions(q1, q2, q3, q4, q5);
 
-    // Calculate each solution individually
-    vector<double> soln_ind(8);
-    clock_t start, end;
-    start = clock();
+//     // Calculate each solution individually
+//     vector<double> soln_ind(8);
+//     clock_t start, end;
+//     start = clock();
 
-    // for (int i=0; i<100000; i++){
-    // soln_ind[0] = soln1(q1, q2, q3, q4, q5);
-    // soln_ind[1] = soln2(q1, q2, q3, q4, q5);
-    // soln_ind[2] = soln3(q1, q2, q3, q4, q5);
-    // soln_ind[3] = soln4(q1, q2, q3, q4, q5);
-    // soln_ind[4] = soln5(q1, q2, q3, q4, q5);
-    // soln_ind[5] = soln6(q1, q2, q3, q4, q5);
-    // soln_ind[6] = soln7(q1, q2, q3, q4, q5);
-    // soln_ind[7] = soln8(q1, q2, q3, q4, q5);
-    // }
-    // end = clock();
-    // double time_taken = double(end-start)/double(CLOCKS_PER_SEC);
-    // cout << "Time taken to calculate each solution individually 100000 times: " << time_taken << " seconds" << endl;
+//     // for (int i=0; i<100000; i++){
+//     // soln_ind[0] = soln1(q1, q2, q3, q4, q5);
+//     // soln_ind[1] = soln2(q1, q2, q3, q4, q5);
+//     // soln_ind[2] = soln3(q1, q2, q3, q4, q5);
+//     // soln_ind[3] = soln4(q1, q2, q3, q4, q5);
+//     // soln_ind[4] = soln5(q1, q2, q3, q4, q5);
+//     // soln_ind[5] = soln6(q1, q2, q3, q4, q5);
+//     // soln_ind[6] = soln7(q1, q2, q3, q4, q5);
+//     // soln_ind[7] = soln8(q1, q2, q3, q4, q5);
+//     // }
+//     // end = clock();
+//     // double time_taken = double(end-start)/double(CLOCKS_PER_SEC);
+//     // cout << "Time taken to calculate each solution individually 100000 times: " << time_taken << " seconds" << endl;
 
-    clock_t start2, end2;
-    start2 = clock();
+//     clock_t start2, end2;
+//     start2 = clock();
 
-    for (int i=0; i<100000; i++){
-    solutions = calc_all_solutions(q1, q2, q3, q4, q5);
-    }
-    end2 = clock();
-    double time_taken2 = double(end2-start2)/double(CLOCKS_PER_SEC);
-    cout << "Time taken to calculate vector solution 100000 times: " << time_taken2 << " seconds" << endl;
-    // cout << "Speedup: " << time_taken/time_taken2 << endl;
+//     for (int i=0; i<100000; i++){
+//     solutions = calc_all_solutions(q1, q2, q3, q4, q5);
+//     }
+//     end2 = clock();
+//     double time_taken2 = double(end2-start2)/double(CLOCKS_PER_SEC);
+//     cout << "Time taken to calculate vector solution 100000 times: " << time_taken2 << " seconds" << endl;
+//     // cout << "Speedup: " << time_taken/time_taken2 << endl;
 
-    // Print all solutions
-    for (int i = 0; i < 8; i++) {
-        cout << "Solution vector" << (i+1) << ": " << solutions[i] << endl;
-        // cout << "Solution individual" << (i+1) << ": " << soln_ind[i] << endl;
-    }
-    // cleanup
-    delete[] solutions;
-    return 0;
-}
+//     // Print all solutions
+//     for (int i = 0; i < 8; i++) {
+//         cout << "Solution vector" << (i+1) << ": " << solutions[i] << endl;
+//         // cout << "Solution individual" << (i+1) << ": " << soln_ind[i] << endl;
+//     }
+//     // cleanup
+//     delete[] solutions;
+//     return 0;
+// }

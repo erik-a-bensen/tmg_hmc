@@ -1,50 +1,45 @@
-CC=g++
+# Find available C++ compiler
+CXX := $(shell command -v g++ 2> /dev/null)
+ifndef CXX
+    CXX := $(shell command -v clang++ 2> /dev/null)
+endif
+ifndef CXX
+    CXX := $(shell command -v c++ 2> /dev/null)
+endif
+ifndef CXX
+    $(error No C++ compiler found. Please install g++, clang++, or another C++ compiler)
+endif
+
+CXXFLAGS=-O3 -Wall -fPIC
 target=utils.cpp
 output=calc_solutions
-CFLAGS=-c -fPIC
+
 ifeq ($(OS),Windows_NT)
-    CCFLAGS += -D WIN32
-	share_ext=dll
-	exec_ext=exe
-    ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
-        CCFLAGS += -D AMD64
-    else
-        ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
-            CCFLAGS += -D AMD64
-        endif
-        ifeq ($(PROCESSOR_ARCHITECTURE),x86)
-            CCFLAGS += -D IA32
-        endif
-    endif
+    share_ext=dll
+    LDFLAGS=-shared
+    RM=del /Q
 else
     UNAME_S := $(shell uname -s)
-	share_ext=so 
-	exec_ext=sh
+    RM=rm -f
+    
     ifeq ($(UNAME_S),Linux)
-        CCFLAGS += -D LINUX
+        share_ext=so
+        LDFLAGS=-shared
     endif
+    
     ifeq ($(UNAME_S),Darwin)
-        CCFLAGS += -D OSX
-    endif
-    UNAME_P := $(shell uname -p)
-    ifeq ($(UNAME_P),x86_64)
-        CCFLAGS += -D AMD64
-    endif
-    ifneq ($(filter %86,$(UNAME_P)),)
-        CCFLAGS += -D IA32
-    endif
-    ifneq ($(filter arm%,$(UNAME_P)),)
-        CCFLAGS += -D ARM
+        share_ext=dylib
+        LDFLAGS=-dynamiclib -undefined dynamic_lookup
     endif
 endif
 
+.PHONY: all clean
 
-build: $(target)
-	$(CC) $(CFLAGS) $(target) -o $(output).o
-	$(CC) -shared -o $(output).$(share_ext) $(output).o
-	$(CC) $(output).o -o $(output).$(exec_ext)
+all: $(output).$(share_ext)
+
+$(output).$(share_ext): $(target)
+	@echo "Using compiler: $(CXX)"
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(target) -o $(output).$(share_ext)
 
 clean:
-	rm -f $(output).*
-
-rebuild: clean build
+	$(RM) $(output).*
