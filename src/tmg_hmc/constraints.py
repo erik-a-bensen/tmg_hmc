@@ -104,9 +104,24 @@ class Constraint(Protocol):
             Dictionary representation of the constraint
         """
         d = self.__dict__.copy()
+        
+        # For sparse constraints, ensure we save S directly
+        # and remove the individual row/column vectors that cause reconstruction issues
+        if 'sparse' in d and d['sparse']:
+            # Keep S if it exists
+            if 'S' not in d and hasattr(self, 'S'):
+                d['S'] = self.S
+            # Remove problematic sparse reconstruction data
+            keys_to_remove = ['s_rows', 's_cols', 'row_data', 'col_data']
+            for key in keys_to_remove:
+                if key in d:
+                    del d[key]
+        
+        # Convert tensors to CPU
         for k, v in d.items():
             if isinstance(v, torch.Tensor):
                 d[k] = v.cpu()
+        
         d['type'] = self.__class__.__name__
         return d
     
@@ -421,20 +436,16 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         sparse = d['sparse']
         A = d['A_orig']
         c = d['c']
-        if sparse:
-            cols = d['s_cols']
-            rows = d['s_rows']
-            n = len(cols[0])
-            S = torch.zeros((n,n)).cuda() if gpu else np.zeros((n,n))
-            rowinds, colinds, _ = get_sparse_elements(A)
-            for rowind in rowinds:
-                S[rowind,:] = rows[rowind]
-            for colind in colinds:
-                S[:,colind] = cols[colind]
-            return cls(A, c, S, sparse)
-        else:
-            S = d['S']
-            return cls(A, c, S, sparse)
+        S = d.get('S', None)
+        
+        # Move to GPU if requested
+        if gpu:
+            if isinstance(S, torch.Tensor):
+                S = S.cuda()
+            if isinstance(A, torch.Tensor):
+                A = A.cuda()
+        
+        return cls(A, c, S, sparse, d.get('compiled', True))
     
     def value_(self, x: Array) -> float:
         """
@@ -631,15 +642,11 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             self._setup_values(A, S)
         if self.compiled:
             self.hit_time = self.hit_time_cpp
-            self.A_dot_x = self.A_dot_x_cpp
-            self.x_dot_A_dot_x = self.x_dot_A_dot_x_cpp
         else:
             self.hit_time = self.hit_time_py
-            self.A_dot_x = self.A_dot_x_py
-            self.x_dot_A_dot_x = self.x_dot_A_dot_x_py
 
     @classmethod 
-    def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
+    def build_from_dict(cls, d: dict, gpu: bool) -> 'QuadraticConstraint':
         """
         Build a QuadraticConstraint from a dictionary representation
 
@@ -659,25 +666,18 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         A = d['A_orig']
         c = d['c']
         b = d['b']
-        if sparse:
-            cols = d['s_cols']
-            rows = d['s_rows']
-            print(rows)
-            n = len(cols[0].flatten())
-            dtype = cols[0].dtype
-            print(n)
-            S = torch.zeros((n,n), dtype=dtype).cuda() if gpu else np.zeros((n,n), dtype=dtype)
-            rowinds, colinds, _ = get_sparse_elements(A)
-            for i in range(len(rowinds)):
-                rowind = rowinds[i]
-                S[rowind,:] = rows[i].flatten()
-            for j in range(len(colinds)):
-                colind = colinds[j]
-                S[:,colind] = cols[j].flatten()
-            return cls(A, b, c, S, sparse)
-        else:
-            S = d['S']
-            return cls(A, b, c, S, sparse)
+        S = d.get('S', None)
+        
+        # Move to GPU if requested
+        if gpu:
+            if isinstance(S, torch.Tensor):
+                S = S.cuda()
+            if isinstance(b, torch.Tensor):
+                b = b.cuda()
+            if isinstance(A, torch.Tensor):
+                A = A.cuda()
+        
+        return cls(A, b, c, S, sparse, d.get('compiled', True))
     
     def value_(self, x: Array) -> float:
         """

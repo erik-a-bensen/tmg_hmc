@@ -719,7 +719,7 @@ Array<br>
 ### `build_from_dict`
 
 ```python
-build_from_dict(d: dict, gpu: bool) -> SimpleQuadraticConstraint
+build_from_dict(d: dict, gpu: bool) -> 'QuadraticConstraint'
 ```
 
 Build a QuadraticConstraint from a dictionary representation
@@ -1435,13 +1435,23 @@ Returns<br>
 
 Notes<br>
 -----<br>
-The shared library is expected to be located at 'compiled/calc_solutions.so'<br>
-relative to the base path of this module.
+The shared library is expected to be located at 'compiled/calc_solutions.{ext}'<br>
+relative to the base path of this module, where {ext} is:<br>
+- 'so' on Linux<br>
+- 'dylib' on macOS<br>
+- 'dll' on Windows
 
 Shared Library Function:<br>
 - calc_all_solutions: Calculates all solutions for the quadratic constraint hit times.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Arguments: Five double precision floating-point numbers.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Returns: A pointer to an array of double precision floating-point numbers.
+
+Raises<br>
+------<br>
+FileNotFoundError<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the shared library is not found at the expected location.<br>
+OSError<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the operating system is unsupported.
 
 ## `get_sparse_elements`
 
