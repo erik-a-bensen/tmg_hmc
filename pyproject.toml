@@ -10,9 +10,11 @@ authors = [
 ]
 description = "This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -35,6 +37,11 @@ test = [
     "pytest>=7.0",
     "pytest-cov",
 ]
+
+[project.urls]
+Homepage = "https://github.com/erik-a-bensen/tmg_hmc"
+Repository = "https://github.com/erik-a-bensen/tmg_hmc"
+Issues = "https://github.com/erik-a-bensen/tmg_hmc/issues"
 
 [tool.hatch.build.hooks.custom]
 path = "hatch_build.py"
