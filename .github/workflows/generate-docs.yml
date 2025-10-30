@@ -5,6 +5,8 @@ on:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -394,8 +396,21 @@ jobs:
         git diff --quiet && git diff --staged --quiet || git commit -m "Update API documentation [skip ci]"
     
     - name: Push changes
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' || github.event_name == 'release'
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: ${{ github.ref }}
+
+  trigger-publish:
+    name: Trigger PyPI publish
+    runs-on: ubuntu-latest
+    needs: generate-docs
+    if: github.event_name == 'release'
+    steps:
+      - name: Trigger publish workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: docs-complete
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
