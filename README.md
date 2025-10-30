@@ -7,6 +7,15 @@
 
 This package implements the exact HMC algorithm from [Pakman and Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for sampling from truncated multivariate Gaussian distributions. 
 
+## How It Works
+
+The algorithm uses Hamiltonian Monte Carlo with
+1. **Analytic Hamiltonian Dynamics**: Particles follow deterministic Hamiltonian trajectories that are analytically computable
+2. **Exact Bounces**: When a trajectory hits a constraint boundary, the algorithm computes the exact bounce time by solving the quartic equation for the hit time analytically
+4. **Perfect Acceptance Probability**: Unlike standard HMC, there's no integration error to solve the Hamiltonian dynamics. This means the acceptance probability is always 1.
+
+See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for mathematical details.
+
 ## Features
 
 - ✅ **Flexible constraints** - Supports linear and quadratic inequality constraints
@@ -23,13 +32,13 @@ cd tmg_hmc
 pip install .
 ```
 
-### Development Installation
+<!-- ### Development Installation
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc/src/tmg_hmc/compiled # Need to precompile for editable install
 make 
 cd ../../..
-pip install -e ".[dev]"  # Includes testing dependencies
+pip install -e ".[dev]"  # Includes testing dependencies -->
 ```
 
 **Requirements:**
@@ -116,20 +125,6 @@ x0 = np.array([[0], [0]])
 samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 ```
 
-## How It Works
-
-The algorithm uses Hamiltonian Monte Carlo with
-1. **Analytic Hamiltonian Dynamics**: Particles follow deterministic Hamiltonian trajectories that are analytically computable
-2. **Exact Bounces**: When a trajectory hits a constraint boundary, the algorithm computes the exact bounce time by solving the quartic equation for the hit time analytically
-4. **Perfect Acceptance Probability**: Unlike standard HMC, there's no integration error to solve the Hamiltonian dynamics. This means the acceptance probability is always 1.
-
-See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for mathematical details.
-
-## Performance Tips
-
-- **GPU Acceleration**: For high-dimensional problems (d > 100), the PyTorch backend can provide significant speedups
-- **Compiled Hit Times**: For quadratic constraints the optimized and compiled hit time calculation provides a significant speedup.
-
 ## Examples
 TO BE IMPLEMENTED
 <!-- See the `examples/` directory for:
@@ -167,7 +162,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this package in your research, please cite:
 
 **Software:**
-> Bensen, E. A. (2025). tmg_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints. *TBD*. [To be updated upon acceptance]
+> Bensen, E. A. (2025). tmg_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints. *TBD*. [To be updated upon acceptance]
 
 **Methodology:**
 > Pakman, A., & Paninski, L. (2014). Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians. *Journal of Computational and Graphical Statistics*, 23(2), 518-542. https://doi.org/10.1080/10618600.2013.788448
@@ -177,7 +172,7 @@ If you use this package in your research, please cite:
 
 ```bibtex
 @article{Bensen2025tmghmc,
-  title={tmg\_hmc: Exact HMC Sampling for Truncated Multivariate Gaussians with Quadratic Constraints},
+  title={tmg\_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints},
   author={Bensen, Erik A.},
   journal={TBD},
   year={2025},
