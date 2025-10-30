@@ -4,17 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmg_hmc"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
 ]
 description = "This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
