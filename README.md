@@ -29,7 +29,7 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 
 ### From PyPi
 ```bash
-pip install tmg_hmc
+pip install tmg-hmc
 ```
 
 ### From Source
@@ -45,8 +45,8 @@ git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc/src/tmg_hmc/compiled # Need to precompile for editable install
 make 
 cd ../../..
-pip install -e ".[dev]"  # Includes testing dependencies -->
-```
+pip install -e ".[dev]"  # Includes testing dependencies
+``` -->
 
 **Requirements:**
 - Python 3.10+
