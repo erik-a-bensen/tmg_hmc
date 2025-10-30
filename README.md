@@ -1,7 +1,9 @@
 # tmg_hmc
 
-[![Python Versions](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![PyPI Version](https://img.shields.io/pypi/v/tmg_hmc)
+![Development Status](https://img.shields.io/pypi/status/tmg_hmc)
+![Python Versions](https://img.shields.io/pypi/pyversions/tmg_hmc)
+![License](https://img.shields.io/pypi/l/tmg_hmc)
 
 > **Exact Hamiltonian Monte Carlo sampling for truncated multivariate Gaussians with quadratic constraints**
 
@@ -24,6 +26,11 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 <!-- - ✅ **Well-tested** - Comprehensive test suite ensuring correctness -->
 
 ## Installation
+
+### From PyPi
+```bash
+pip install tmg_hmc
+```
 
 ### From Source
 ```bash
