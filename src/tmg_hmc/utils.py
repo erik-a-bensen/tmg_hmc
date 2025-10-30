@@ -68,6 +68,25 @@ def get_shared_library() -> ctypes.CDLL:
     lib.calc_all_solutions.restype = ctypes.POINTER(ctypes.c_double)
     return lib
 
+def check_installation() -> bool:
+    """
+    Checks if the shared library for calculating quadratic constraint hit times is installed.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the shared library is not found at the expected location.
+    OSError
+        If the operating system is unsupported.
+    """
+    try:
+        _ = get_shared_library()
+        print("Installation check passed: Shared library is available.")
+        return True
+    except (FileNotFoundError, OSError) as e:
+        print(f"Installation check failed: {e}")
+        return False
+
 def sparsify(A: Array) -> Array:
     """
     Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.

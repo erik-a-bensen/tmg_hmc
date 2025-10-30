@@ -1,8 +1,8 @@
 # tmg_hmc
 
 ![PyPI Version](https://img.shields.io/pypi/v/tmg_hmc)
-![Development Status](https://img.shields.io/pypi/status/tmg_hmc)
-![Python Versions](https://img.shields.io/pypi/pyversions/tmg_hmc)
+<!-- ![Development Status](https://img.shields.io/pypi/status/tmg_hmc)
+![Python Versions](https://img.shields.io/pypi/pyversions/tmg_hmc) -->
 ![License](https://img.shields.io/pypi/l/tmg_hmc)
 
 > **Exact Hamiltonian Monte Carlo sampling for truncated multivariate Gaussians with quadratic constraints**
