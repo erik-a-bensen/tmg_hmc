@@ -1,6 +1,6 @@
 # API Reference
 
-> **Package:** `tmg_hmc` v0.0.2
+> **Package:** `tmg_hmc` v0.0.7
 >
 > This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
 
@@ -1420,6 +1420,21 @@ Uses the cmath.acos function to handle complex values and returns the real part.
 Can potentially create ghost values if the input is outside the range [-1, 1]. <br>
 However, due to the complexity of the solution expressions this is necessary for <br>
 numerical stability and ghost solutions are filtered out later.
+
+## `check_installation`
+
+```python
+check_installation() -> <class 'bool'>
+```
+
+Checks if the shared library for calculating quadratic constraint hit times is installed.
+
+Raises<br>
+------<br>
+FileNotFoundError<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the shared library is not found at the expected location.<br>
+OSError<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the operating system is unsupported.
 
 ## `get_shared_library`
 
