@@ -187,7 +187,7 @@ If you use this package in your research, please cite:
 ```bibtex
 @article{Bensen2025tmghmc,
   title={tmg\_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints},
-  author={Bensen, Erik A.},
+  author={Bensen, Erik A. and Kuusela M.},
   journal={TBD},
   year={2025},
   note={[To be updated upon acceptance]}
