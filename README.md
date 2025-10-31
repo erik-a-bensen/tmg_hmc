@@ -39,6 +39,13 @@ cd tmg_hmc
 pip install .
 ```
 
+### Test Shared Library Compilation
+In a Python session run the following
+```python
+import tmg_hmc
+tmg_hmc.utils.test_installation()
+```
+
 <!-- ### Development Installation
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
