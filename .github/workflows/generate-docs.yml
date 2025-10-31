@@ -3,7 +3,7 @@ name: Generate API Documentation
 on:
   push:
     branches: [ main, dev ]
-    paths: ['**/*.py']
+    paths: ['src/**/*.py']
 
 permissions:
   contents: write
