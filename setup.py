@@ -1,61 +1,53 @@
-from setuptools import setup
-from setuptools.command.build_py import build_py
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 import subprocess
 import sys
 from pathlib import Path
 
-class BuildWithMake(build_py):
-    """Custom build command that runs make before building."""
+class MakeBuildExt(build_ext):
+    def build_extension(self, ext):
+        if ext.name == "tmg_hmc.compiled._ext":
+            self.compile_with_make()
+        else:
+            super().build_extension(ext)
     
-    def run(self):
-        # Compile the C++ extension
-        self.compile_extension()
-        # Continue with normal build
-        super().run()
-    
-    def compile_extension(self):
-        """Run make to compile the C++ shared library."""
+    def compile_with_make(self):
         print("=" * 60)
-        print("Building C++ shared library...")
+        print("Building C++ shared library with make...")
         print("=" * 60)
-        sys.stdout.flush()
         
-        # Path to the compiled directory
-        compiled_dir = Path(__file__).parent / "src" / "tmg_hmc" / "compiled"
+        compiled_dir = Path(self.build_lib) / "tmg_hmc" / "compiled"
+        src_compiled_dir = Path("src") / "tmg_hmc" / "compiled"
         
-        if not compiled_dir.exists():
-            raise RuntimeError(f"Compiled directory not found: {compiled_dir}")
-        
-        # Run make
         try:
-            result = subprocess.run(
+            subprocess.run(
+                ["make", "clean"],
+                cwd=src_compiled_dir,
+                check=False,
+            )
+            subprocess.run(
                 ["make"],
-                cwd=compiled_dir,
+                cwd=src_compiled_dir,
                 check=True,
                 stdout=sys.stdout,
                 stderr=sys.stderr
             )
-            print("=" * 60)
             print("C++ library compiled successfully!")
-            print("=" * 60)
-            sys.stdout.flush()
         except subprocess.CalledProcessError as e:
-            sys.stderr.write("Make failed!\n")
             raise RuntimeError("Failed to compile C++ library") from e
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Make command not found. Please install build tools:\n"
-                "  Linux: sudo apt-get install build-essential\n"
-                "  macOS: xcode-select --install\n"
-                "  Windows: Install Visual Studio Build Tools"
-            )
+
+# Define extension that triggers make
+ext = Extension(
+    name="tmg_hmc.compiled._ext",
+    sources=["src/tmg_hmc/compiled/utils.cpp"],
+    extra_compile_args=["-O3", "-Wall", "-fPIC", "-std=c++14"],
+    language="c++",
+)
 
 setup(
-    cmdclass={
-        'build_py': BuildWithMake,
-    },
+    ext_modules=[ext],
+    cmdclass={'build_ext': MakeBuildExt},
     package_data={
         'tmg_hmc': ['compiled/*.so', 'compiled/*.dylib', 'compiled/*.dll'],
     },
-    include_package_data=True,
 )
