@@ -36,10 +36,15 @@ else
     
     ifeq ($(UNAME_S),Darwin)
         share_ext=dylib
-        # macOS: use libc++ (system C++ library) which is always available
         LDFLAGS=-dynamiclib -undefined dynamic_lookup
         # Use libc++ instead of libstdc++ on macOS
         CXXFLAGS=-O3 -Wall -fPIC -std=c++14 -stdlib=libc++
+        
+        # Support cross-compilation via ARCHFLAGS environment variable
+        ifdef ARCHFLAGS
+            CXXFLAGS += $(ARCHFLAGS)
+            LDFLAGS += $(ARCHFLAGS)
+        endif
     endif
 endif
 
