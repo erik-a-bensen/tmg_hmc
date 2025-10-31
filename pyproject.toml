@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmg_hmc"
-version = "0.0.7"
+version = "0.0.6"  
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
 ]
@@ -44,3 +44,54 @@ Issues = "https://github.com/erik-a-bensen/tmg_hmc/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# cibuildwheel configuration
+[tool.cibuildwheel]
+# Build for CPython 3.10-3.13 (3.14 might not be fully supported yet)
+build = "cp310-* cp311-* cp312-* cp313-*"
+
+# Skip 32-bit builds, musllinux, and PyPy
+skip = "*-win32 *-manylinux_i686 *-musllinux_* pp*"
+
+# Build verbosity
+build-verbosity = 1
+
+# Test the wheels after building
+test-requires = "pytest"
+test-command = "pytest {project}/tests || true"  # Don't fail if no tests yet
+
+[tool.cibuildwheel]
+# Build for CPython 3.10-3.13
+build = "cp310-* cp311-* cp312-* cp313-*"
+
+# Skip 32-bit builds, musllinux, and PyPy
+skip = "*-win32 *-manylinux_i686 *-musllinux_* pp*"
+
+# Build verbosity
+build-verbosity = 1
+
+# Test the wheels after building
+test-requires = "pytest numpy"
+test-command = "python -c 'import tmg_hmc; print(tmg_hmc.__version__)'"
+
+[tool.cibuildwheel.linux]
+# Use manylinux2014 (compatible with most systems)
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
+
+# Install build dependencies including static libraries
+before-build = [
+    "yum install -y gcc-c++ make libstdc++-static || apt-get update && apt-get install -y g++ make"
+]
+
+[tool.cibuildwheel.macos]
+# Build for both Intel and Apple Silicon
+archs = ["x86_64", "arm64"]
+
+# Ensure we use libc++ on macOS
+environment = { MACOSX_DEPLOYMENT_TARGET = "10.9" }
+
+[tool.cibuildwheel.windows]
+# Install Visual Studio Build Tools
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"

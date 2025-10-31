@@ -49,6 +49,10 @@ Aside from toy problems and demonstrations, the majority of problems require
 efficient numerical tools, many of which require the same base code (e.g., for
 performing numerical orbit integration). -->
 
+tmg_hmc is a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated 
+Multivariate Gaussians presented [@Pakman:2014]. Hamiltonian Monte Carlo (HMC) is a 
+gradient-based Markov Chain Monte Carlo (MCMC) method where 
+
 # Statement of need
 
 <!-- `Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
