@@ -43,7 +43,7 @@ pip install .
 In a Python session run the following
 ```python
 import tmg_hmc
-tmg_hmc.utils.test_installation()
+tmg_hmc.utils.check_installation()
 ```
 
 <!-- ### Development Installation
