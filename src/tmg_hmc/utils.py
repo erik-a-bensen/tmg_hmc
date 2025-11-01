@@ -8,7 +8,7 @@ from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     from torch import Tensor, sparse_coo
 else:
-    class Tensor:
+    class Tensor(object):
         pass
 
 # ignore runtime warning

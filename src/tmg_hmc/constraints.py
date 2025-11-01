@@ -9,7 +9,7 @@ if _TORCH_AVAILABLE:
     from torch import Tensor
 else:
     torch = None
-    class Tensor:
+    class Tensor(object):
         pass
 
 from tmg_hmc.compiled import calc_all_solutions
