@@ -638,9 +638,6 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         sparse parameter.
         It is highly recommended to use compiled code for performance reasons.
         """
-        if compiled and not _TORCH_AVAILABLE:
-            compiled = False
-            warnings.warn("Compiled code requested but PyTorch is not available. Using pure Python implementation instead.")
         self.c = c
         self.b = b
         if isinstance(A, Sparse):
