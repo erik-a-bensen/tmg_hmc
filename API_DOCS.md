@@ -1,6 +1,6 @@
 # API Reference
 
-> **Package:** `tmg_hmc` v0.1.0
+> **Package:** `tmg_hmc` v0.1.1
 >
 > This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
 
@@ -1453,7 +1453,7 @@ bool<br>
 ## `get_sparse_elements`
 
 ```python
-get_sparse_elements(A: Union) -> Tuple[Union[numpy.ndarray, tmg_hmc.utils.Tensor, scipy.sparse._coo.coo_matrix, NoneType], Union[numpy.ndarray, tmg_hmc.utils.Tensor, scipy.sparse._coo.coo_matrix, NoneType], Union[numpy.ndarray, tmg_hmc.utils.Tensor, scipy.sparse._coo.coo_matrix, NoneType]]
+get_sparse_elements(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None]
 ```
 
 Extracts the row, column, and data elements from a sparse matrix.
@@ -1471,7 +1471,7 @@ Tuple[Array, Array, Array]<br>
 ## `sparsify`
 
 ```python
-sparsify(A: Union) -> Union[numpy.ndarray, tmg_hmc.utils.Tensor, scipy.sparse._coo.coo_matrix, NoneType]
+sparsify(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None
 ```
 
 Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
@@ -1489,14 +1489,14 @@ Array<br>
 ## `to_scalar`
 
 ```python
-to_scalar(x: Union) -> <class 'float'>
+to_scalar(x: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
 ```
 
 Converts a scalar array or a float to a float.
 
 Parameters<br>
 ----------<br>
-x : Union[Array, float]<br>
+x : Array | float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The input value to be converted.
 
 Returns<br>
