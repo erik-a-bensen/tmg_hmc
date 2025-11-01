@@ -23,21 +23,14 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "torch",
-    "scipy",
-    "pybind11"
+    "scipy"
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov",
-    "black",
-    "isort",
-    "flake8",
-    "mypy",
-    "pre-commit",
+gpu = [
+    "torch>=2.0.0"
 ]
+
 test = [
     "pytest>=7.0",
     "pytest-cov",
@@ -55,7 +48,7 @@ where = ["src"]
 build = "cp310-* cp311-* cp312-* cp313-*"
 skip = "*-win32 *-manylinux_i686 *-musllinux_* pp*"
 build-verbosity = 1
-test-requires = ["numpy", "torch", "scipy"]
+test-requires = ["numpy", "scipy"]
 test-command = """python -c "import tmg_hmc; print('tmg_hmc imported successfully')" """
 
 
