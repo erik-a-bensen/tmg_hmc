@@ -1392,9 +1392,25 @@ Returns<br>
 float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Result of x^T A x computation
 
+## `Tensor` (class)
+
+```python
+Tensor(args, kwargs)
+```
+
+Initialize self.  See help(type(self)) for accurate signature.
+
 ---
 
 # Utils Module
+
+## `Tensor` (class)
+
+```python
+Tensor(args, kwargs)
+```
+
+Initialize self.  See help(type(self)) for accurate signature.
 
 ## `arccos`
 
@@ -1421,57 +1437,23 @@ Can potentially create ghost values if the input is outside the range [-1, 1]. <
 However, due to the complexity of the solution expressions this is necessary for <br>
 numerical stability and ghost solutions are filtered out later.
 
-## `check_installation`
+## `compiled_library_available`
 
 ```python
-check_installation() -> <class 'bool'>
+compiled_library_available() -> <class 'bool'>
 ```
 
-Checks if the shared library for calculating quadratic constraint hit times is installed.
+Checks if the compiled shared library is available.
 
-Raises<br>
-------<br>
-FileNotFoundError<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the shared library is not found at the expected location.<br>
-OSError<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the operating system is unsupported.
-
-## `get_shared_library`
-
-```python
-get_shared_library() -> <class 'ctypes.CDLL'>
-```
-
-Loads the compiled shared library for calculating the quadratic constraint hit times.
-
-Returns<br>
+Return<br>
 -------<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ctypes.CDLL: The loaded shared library.
-
-Notes<br>
------<br>
-The shared library is expected to be located at 'compiled/calc_solutions.{ext}'<br>
-relative to the base path of this module, where {ext} is:<br>
-- 'so' on Linux<br>
-- 'dylib' on macOS<br>
-- 'dll' on Windows
-
-Shared Library Function:<br>
-- calc_all_solutions: Calculates all solutions for the quadratic constraint hit times.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Arguments: Five double precision floating-point numbers.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Returns: A pointer to an array of double precision floating-point numbers.
-
-Raises<br>
-------<br>
-FileNotFoundError<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the shared library is not found at the expected location.<br>
-OSError<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the operating system is unsupported.
+bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;True if the shared library is available, False otherwise.
 
 ## `get_sparse_elements`
 
 ```python
-get_sparse_elements(A: numpy.ndarray | None | scipy.sparse._coo.coo_matrix) -> Tuple[numpy.ndarray | None | scipy.sparse._coo.coo_matrix, numpy.ndarray | None | scipy.sparse._coo.coo_matrix, numpy.ndarray | None | scipy.sparse._coo.coo_matrix]
+get_sparse_elements(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None]
 ```
 
 Extracts the row, column, and data elements from a sparse matrix.
@@ -1489,7 +1471,7 @@ Tuple[Array, Array, Array]<br>
 ## `sparsify`
 
 ```python
-sparsify(A: numpy.ndarray | None | scipy.sparse._coo.coo_matrix) -> numpy.ndarray | None | scipy.sparse._coo.coo_matrix
+sparsify(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None
 ```
 
 Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
@@ -1507,7 +1489,7 @@ Array<br>
 ## `to_scalar`
 
 ```python
-to_scalar(x: numpy.ndarray | None | scipy.sparse._coo.coo_matrix | float) -> <class 'float'>
+to_scalar(x: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
 ```
 
 Converts a scalar array or a float to a float.
@@ -1534,6 +1516,8 @@ calc_all_solutions(...)
 
 calc_all_solutions(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> numpy.typing.NDArray[numpy.float64]
 
+
+calc_all_solutions(x: np.ndarray, xdot: np.ndarray, A: np.ndarray, b: np.ndarray) -> np.ndarray
 
 Compute all 8 solutions for the full quadratic constraint hit time.
 
