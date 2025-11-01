@@ -3,9 +3,9 @@ name: Generate API Documentation
 on:
   push:
     branches: [ main, dev ]
-    paths: ['src/**/*.py', 'src/**/*.h']
-    paths-ignore:
-      - 'src/**/__init__.py'
+    paths:
+      - 'src/**/*.py'
+      - 'src/**/*.h'
 
 permissions:
   contents: write
@@ -13,10 +13,20 @@ permissions:
 jobs:
   generate-docs:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Skip if only __init__.py changed
+      id: skip
+      run: |
+        # List all changed files in this push
+        changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -v '__init__.py' || true)
+        if [ -z "$changed" ]; then
+          echo "Only __init__.py files changed. Skipping documentation generation."
+          exit 0
+        fi
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -60,7 +70,8 @@ jobs:
             'tmg_hmc',
             'tmg_hmc.constraints',
             'tmg_hmc.utils',
-            'tmg_hmc.quadratic_solns',
+            'tmg_hmc.compiled',
+            'tmg_hmc.quad_solns',
         ]
         # ============================================================
 

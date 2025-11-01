@@ -32,7 +32,7 @@ def soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (-arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) - 
@@ -149,7 +149,7 @@ def soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) - 
@@ -266,7 +266,7 @@ def soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (-arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) - 
@@ -383,7 +383,7 @@ def soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) - 
@@ -500,7 +500,7 @@ def soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (-arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) + 
@@ -617,7 +617,7 @@ def soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) + 
@@ -734,7 +734,7 @@ def soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (-arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) + 
@@ -851,7 +851,7 @@ def soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float:
     See resources/HMC_exact_soln.nb for details.
 
     It is not recommended to use this function directly due to its complexity and slow performance. Instead,
-    use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.
+    use the compiled module for efficient computation of all solutions.
     This function is maintained for reference and validation purposes.
     """
     return (arccos(-0.5*(q1*q2 + q4*q5)/(q1**2 + q4**2) + 
