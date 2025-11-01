@@ -11,21 +11,37 @@ permissions:
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
+        include:
+          - os: ubuntu-22.04
+            arch: x86_64
+            runner: ubuntu-22.04
+          - os: macos
+            arch: x86_64
+            runner: macos-15
+          - os: macos
+            arch: arm64
+            runner: macos-15
+          - os: windows-2022
+            arch: x86_64
+            runner: windows-2022
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21
-        
+        env:
+          CIBW_ARCHS_MACOS: ${{ matrix.arch }}
+          # Skip testing arm64 wheels on non-arm64 runners (safe fallback)
+          CIBW_TEST_SKIP: ${{ 'cp*-macosx_arm64' if matrix.arch == 'arm64' && matrix.runner != 'macos-15' else '' }}
+
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: wheels-${{ matrix.os }}-${{ matrix.arch }}
           path: ./wheelhouse/*.whl
 
   build_sdist:

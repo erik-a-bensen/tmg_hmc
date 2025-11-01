@@ -28,8 +28,14 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 ## Installation
 
 ### From PyPi
+Base package install
 ```bash
 pip install tmg-hmc
+```
+
+Optional GPU support
+```bash
+pip install tmg-hmc[gpu]
 ```
 
 ### From Source
@@ -39,31 +45,13 @@ cd tmg_hmc
 pip install .
 ```
 
-### Test Shared Library Compilation
-In a Python session run the following
-```python
-import tmg_hmc
-tmg_hmc.utils.check_installation()
-```
-
-<!-- ### Development Installation
-```bash
-git clone https://github.com/erik-a-bensen/tmg_hmc.git
-cd tmg_hmc/src/tmg_hmc/compiled # Need to precompile for editable install
-make 
-cd ../../..
-pip install -e ".[dev]"  # Includes testing dependencies
-``` -->
-
 **Requirements:**
 - Python 3.10+
 - numpy
 - scipy
-- torch
 
-**Build Requirements:**
-- C++ compiler (g++, clang, or MSVC)
-- make
+**Optional GPU Requirements**
+- torch
 
 ## Quick Start
 

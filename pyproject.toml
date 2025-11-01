@@ -6,10 +6,9 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "tmg_hmc"
-version = "0.0.20"
+version = "0.0.19"
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
 ]
@@ -51,14 +50,13 @@ build-verbosity = 1
 test-requires = ["numpy", "scipy"]
 test-command = """python -c "import tmg_hmc; print('tmg_hmc imported successfully')" """
 
-
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
 before-build = "yum install -y gcc-c++ make"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
-environment = { MACOSX_DEPLOYMENT_TARGET = "10.9" }
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
 repair-wheel-command = ""
 
 [tool.cibuildwheel.windows]
