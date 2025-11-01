@@ -1,4 +1,6 @@
-#include "utils.h"
+#include "quad_solns_cpp.h"
+
+using namespace std;
 
 // Calculate all intermediate values once and return all 8 solutions
 double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5) {

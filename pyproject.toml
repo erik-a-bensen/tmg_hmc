@@ -19,7 +19,8 @@ classifiers = [
 dependencies = [
     "numpy",
     "torch",
-    "scipy"
+    "scipy",
+    "pybind11"
 ]
 
 [project.optional-dependencies]

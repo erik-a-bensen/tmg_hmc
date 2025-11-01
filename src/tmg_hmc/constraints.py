@@ -3,13 +3,11 @@ import numpy as np
 from typing import Protocol, Tuple, Protocol
 import torch
 from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements, get_shared_library
-from tmg_hmc.quadratic_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
+from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
+from tmg_hmc.compiled import calc_all_solutions
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
-
-# Load the shared library
-lib = get_shared_library()
 
 class Constraint(Protocol):
     """
@@ -828,9 +826,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         a, b = xdot, x
         pis = np.array([-2, 0, 2]).reshape(-1,1)*np.pi
         qs = self.compute_q(a, b)
-        soln = lib.calc_all_solutions(*qs)
-        s = np.ctypeslib.as_array(soln, shape=(1,8))
-        lib.free_ptr(soln)
+        # Old ctypes version --- IGNORE ---
+        # soln = lib.calc_all_solutions(*qs)
+        # s = np.ctypeslib.as_array(soln, shape=(1,8))
+        # lib.free_ptr(soln)
+
+        # New pybind11 compiled version
+        s = calc_all_solutions(*qs).reshape((1,8))
         s = (s + pis).flatten()
         return np.unique(s[s > 1e-7])
     
