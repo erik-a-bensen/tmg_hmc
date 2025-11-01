@@ -18,7 +18,7 @@ setup(
     ext_modules=[
         Extension(
             'tmg_hmc.compiled',
-            sources=['src/tmg_hmc/quad_solns_cpp.cpp'],
+            sources=['src/tmg_hmc/quad_solns.cpp'],
             include_dirs=[pybind11.get_include()],
             language='c++',
             extra_compile_args=extra_compile_args,

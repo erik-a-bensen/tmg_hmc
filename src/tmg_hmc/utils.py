@@ -1,17 +1,16 @@
 import numpy as np 
 from cmath import acos
-from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
+from typing import TypeAlias, Tuple
+import os
 
 from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     from torch import Tensor, sparse_coo
 else:
-    Tensor = None
-    
-from typing import TypeAlias, Tuple
-import platform
-import ctypes
-import os
+    class Tensor:
+        pass
+
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -19,78 +18,19 @@ Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
 Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
-def get_shared_library() -> ctypes.CDLL:
+def compiled_library_available() -> bool:
     """
-    Loads the compiled shared library for calculating the quadratic constraint hit times.
+    Checks if the compiled shared library is available.
 
-    Returns
+    Return
     -------
-        ctypes.CDLL: The loaded shared library.
-
-    Notes
-    -----
-    The shared library is expected to be located at 'compiled/calc_solutions.{ext}'
-    relative to the base path of this module, where {ext} is:
-    - 'so' on Linux
-    - 'dylib' on macOS
-    - 'dll' on Windows
-
-    Shared Library Function:
-    - calc_all_solutions: Calculates all solutions for the quadratic constraint hit times.
-        - Arguments: Five double precision floating-point numbers.
-        - Returns: A pointer to an array of double precision floating-point numbers.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the shared library is not found at the expected location.
-    OSError
-        If the operating system is unsupported.
-    """
-    # Determine shared library extension based on OS
-    system = platform.system()
-    if system == 'Linux':
-        lib_ext = 'so'
-    elif system == 'Darwin':  # macOS
-        lib_ext = 'dylib'
-    elif system == 'Windows':
-        lib_ext = 'dll'
-    else:
-        raise OSError(f"Unsupported operating system: {system}")
-    
-    lib_path = os.path.join(base_path, 'compiled', f'calc_solutions.{lib_ext}')
-    
-    if not os.path.exists(lib_path):
-        raise FileNotFoundError(
-            f"Shared library not found at {lib_path}. "
-            f"Please ensure the library has been compiled for your platform. "
-            f"Run 'make' in the {os.path.join(base_path, 'compiled')} directory."
-        )
-    
-    lib = ctypes.CDLL(lib_path)
-
-    # Define function arguments
-    lib.calc_all_solutions.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
-    lib.calc_all_solutions.restype = ctypes.POINTER(ctypes.c_double)
-    return lib
-
-def check_installation() -> bool:
-    """
-    Checks if the shared library for calculating quadratic constraint hit times is installed.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the shared library is not found at the expected location.
-    OSError
-        If the operating system is unsupported.
+    bool
+        True if the shared library is available, False otherwise.
     """
     try:
-        _ = get_shared_library()
-        print("Installation check passed: Shared library is available.")
+        import tmg_hmc.compiled as c 
         return True
-    except (FileNotFoundError, OSError) as e:
-        print(f"Installation check failed: {e}")
+    except ImportError:
         return False
 
 def sparsify(A: Array) -> Array:

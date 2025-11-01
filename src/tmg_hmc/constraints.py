@@ -1,15 +1,17 @@
 from __future__ import annotations
 import numpy as np
 from typing import Protocol, Tuple, Protocol
+from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements
+from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     import torch
     from torch import Tensor
 else:
     torch = None
-    Tensor = None
-from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements, get_shared_library
-from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
+    class Tensor:
+        pass
+
 from tmg_hmc.compiled import calc_all_solutions
 import warnings
 

@@ -1,102 +1,171 @@
-#include "quad_solns_cpp.h"
+#include "quad_solns.h"
+#include <complex>
 
 using namespace std;
 
-// Calculate all intermediate values once and return all 8 solutions
+// Function to compute all 8 solutions for the quadratic constraint hit time
 double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5) {
     double* solutions = new double[8];
-    
-    // Calculate the common base term
-    complex<double> base_term = -0.5 * (q1 * q2 + q4 * q5) / (pow(q1, 2) + pow(q4, 2));
-    
-    // Calculate the first sqrt expression (same for all functions)
-    complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / pow(pow(q1, 2) + pow(q4, 2), 2);
-    complex<double> term2_a = (2 * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / (3. * (pow(q1, 2) + pow(q4, 2)));
-    
-    // Complex cubic root calculation
-    complex<double> cubic_numerator = -12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
-                            12*(pow(q1, 2) + pow(q4, 2))*(pow(q3, 2) - pow(q5, 2)) + 
-                            pow(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2), 2);
-    
-    // The extremely complex term inside the cubic calculation
-    complex<double> big_term = 108*(pow(q1, 2) + pow(q4, 2))*pow(q2*q3 - q4*q5, 2) + 
-                     108*pow(q1*q2 + q4*q5, 2)*(pow(q3, 2) - pow(q5, 2)) - 
-                     36*(q2*q3 - q4*q5)*(q1*q2 + q4*q5)*(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2)) - 
-                     72*(pow(q1, 2) + pow(q4, 2))*(pow(q3, 2) - pow(q5, 2))*(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2)) + 
-                     2*pow(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2), 3);
 
-    // The square root inside the cubic term
-    complex<double> inner_sqrt = sqrt(-4. * pow(cubic_numerator, 3) + pow(big_term, 2));
-    
-    // Complete cubic term
-    complex<double> big_term_plus_sqrt = big_term + inner_sqrt;
-    complex<double> cubic_root = pow(big_term_plus_sqrt, (1./3.));
+    // Common denominators
+    double q1_sq = q1 * q1;
+    double q4_sq = q4 * q4;
+    double denom = q1_sq + q4_sq;
 
-    complex<double> term3_a = (pow(2, (1./3.)) * cubic_numerator) / (3. * (pow(q1, 2) + pow(q4, 2)) * cubic_root);
-    complex<double> term4_a = cubic_root / (3. * pow(2, (1./3.)) * (pow(q1, 2) + pow(q4, 2)));
-    
-    // Calculate the complete first sqrt expression
-    complex<double> first_sqrt_expr = term1_a - term2_a + term3_a + term4_a;
-    complex<double> first_sqrt = sqrt(first_sqrt_expr);
-    
-    // Intermediate calculations for the second sqrt
-    complex<double> term1_b = (2 * pow(q1*q2 + q4*q5, 2)) / pow(pow(q1, 2) + pow(q4, 2), 2);
-    complex<double> term2_b = (4 * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / (3. * (pow(q1, 2) + pow(q4, 2)));
-    
-    // Calculate the differential term
-    complex<double> diff_term1 = (-8 * pow(q1*q2 + q4*q5, 3)) / pow(pow(q1, 2) + pow(q4, 2), 3);
-    complex<double> diff_term2 = (16 * (-(q2*q3) + q4*q5)) / (pow(q1, 2) + pow(q4, 2));
-    complex<double> diff_term3 = (8 * (q1*q2 + q4*q5) * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / pow(pow(q1, 2) + pow(q4, 2), 2);
-    complex<double> diff_numerator = diff_term1 + diff_term2 + diff_term3;
-    complex<double> diff_denom = 4. * first_sqrt;
-    complex<double> diff_term = diff_numerator / diff_denom;
-    
-    // Calculate the four versions of the second sqrt expression
-    // We need different versions based on the sign pattern in the original code
-    complex<double> second_sqrt_expr_1_2 = term1_b - term2_b - term3_a - term4_a - diff_term; // For functions 1, 2
-    complex<double> second_sqrt_expr_3_4 = term1_b - term2_b - term3_a - term4_a - diff_term; // For functions 3, 4
-    complex<double> second_sqrt_expr_5_6 = term1_b - term2_b - term3_a - term4_a + diff_term; // For functions 5, 6
-    complex<double> second_sqrt_expr_7_8 = term1_b - term2_b - term3_a - term4_a + diff_term; // For functions 7, 8
-    
-    complex<double> second_sqrt_1_2 = sqrt(second_sqrt_expr_1_2);
-    complex<double> second_sqrt_3_4 = sqrt(second_sqrt_expr_3_4);
-    complex<double> second_sqrt_5_6 = sqrt(second_sqrt_expr_5_6);
-    complex<double> second_sqrt_7_8 = sqrt(second_sqrt_expr_7_8);
-    
-    // Calculate half values for convenience
+    // Base term
+    complex<double> base_term = -0.5 * (q1*q2 + q4*q5) / denom;
+
+    // First sqrt term
+    complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / (denom * denom);
+    complex<double> term2_a = 2.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
+
+    // Cubic term
+    complex<double> cubic_num = -12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) 
+                                + 12*denom*(pow(q3,2) - pow(q5,2)) 
+                                + pow(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2),2);
+
+    complex<double> big_term = 108*denom*pow(q2*q3 - q4*q5,2) 
+                               + 108*pow(q1*q2 + q4*q5,2)*(pow(q3,2) - pow(q5,2)) 
+                               - 36*(q2*q3 - q4*q5)*(q1*q2 + q4*q5)*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) 
+                               - 72*denom*(pow(q3,2) - pow(q5,2))*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) 
+                               + 2*pow(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2),3);
+
+    complex<double> inner_sqrt = sqrt(-4.0*pow(cubic_num,3) + pow(big_term,2));
+    complex<double> cubic_root = pow(big_term + inner_sqrt, 1.0/3.0);
+
+    complex<double> term3_a = pow(2.0,1.0/3.0) * cubic_num / (3.0 * denom * cubic_root);
+    complex<double> term4_a = cubic_root / (3.0 * pow(2.0, 1.0/3.0) * denom);
+
+    complex<double> first_sqrt = sqrt(term1_a - term2_a + term3_a + term4_a);
     complex<double> half_first_sqrt = first_sqrt / 2.0;
-    complex<double> half_second_sqrt_1_2 = second_sqrt_1_2 / 2.0;
-    complex<double> half_second_sqrt_3_4 = second_sqrt_3_4 / 2.0;
-    complex<double> half_second_sqrt_5_6 = second_sqrt_5_6 / 2.0;
-    complex<double> half_second_sqrt_7_8 = second_sqrt_7_8 / 2.0;
-    
-    // Calculate all 8 solutions using the correct combinations
-    // soln1: sign before acos = -, sign before first sqrt = -, sign before second sqrt = -
-    solutions[0] = -arccos(base_term - half_first_sqrt - half_second_sqrt_1_2);
-    
-    // soln2: sign before acos = +, sign before first sqrt = -, sign before second sqrt = -
-    solutions[1] = arccos(base_term - half_first_sqrt - half_second_sqrt_1_2);
-    
-    // soln3: sign before acos = -, sign before first sqrt = -, sign before second sqrt = +
-    solutions[2] = -arccos(base_term - half_first_sqrt + half_second_sqrt_3_4);
-    
-    // soln4: sign before acos = +, sign before first sqrt = -, sign before second sqrt = +
-    solutions[3] = arccos(base_term - half_first_sqrt + half_second_sqrt_3_4);
-    
-    // soln5: sign before acos = -, sign before first sqrt = +, sign before second sqrt = -
-    solutions[4] = -arccos(base_term + half_first_sqrt - half_second_sqrt_5_6);
-    
-    // soln6: sign before acos = +, sign before first sqrt = +, sign before second sqrt = -
-    solutions[5] = arccos(base_term + half_first_sqrt - half_second_sqrt_5_6);
-    
-    // soln7: sign before acos = -, sign before first sqrt = +, sign before second sqrt = +
-    solutions[6] = -arccos(base_term + half_first_sqrt + half_second_sqrt_7_8);
-    
-    // soln8: sign before acos = +, sign before first sqrt = +, sign before second sqrt = +
-    solutions[7] = arccos(base_term + half_first_sqrt + half_second_sqrt_7_8);
-    
+
+    // Second sqrt term
+    complex<double> term1_b = 2.0 * pow(q1*q2 + q4*q5,2) / (denom * denom);
+    complex<double> term2_b = 4.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
+
+    complex<double> diff_term = ((-8*pow(q1*q2 + q4*q5,3))/pow(denom,3) 
+                                 + 16*(-q2*q3 + q4*q5)/denom 
+                                 + 8*(q1*q2 + q4*q5)*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2))/pow(denom,2)) 
+                                / (4.0 * first_sqrt);
+
+    complex<double> second_sqrt_minus = sqrt(term1_b - term2_b - term3_a - term4_a - diff_term);
+    complex<double> second_sqrt_plus  = sqrt(term1_b - term2_b - term3_a - term4_a + diff_term);
+
+    complex<double> half_second_sqrt_minus = second_sqrt_minus / 2.0;
+    complex<double> half_second_sqrt_plus  = second_sqrt_plus  / 2.0;
+
+    // Generate all 8 solutions
+    for (int i = 0; i < 8; ++i) {
+        double acos_sign        = (i & 1) ? 1.0 : -1.0;  // multiply final double
+        double second_sqrt_sign = (i & 2) ? 1.0 : -1.0;  // multiply complex
+        double first_sqrt_sign  = (i & 4) ? 1.0 : -1.0;  // multiply complex
+
+        complex<double> half_second = (first_sqrt_sign > 0.0) ? half_second_sqrt_plus : half_second_sqrt_minus;
+        complex<double> arg = base_term + first_sqrt_sign * half_first_sqrt + second_sqrt_sign * half_second;
+
+        solutions[i] = acos_sign * arccos(arg);
+    }
+
     return solutions;
 }
+
+
+
+// Old  Version:
+// double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5) {
+//     double* solutions = new double[8];
+
+//     // Calculate the common base term
+//     complex<double> base_term = -0.5 * (q1 * q2 + q4 * q5) / (pow(q1, 2) + pow(q4, 2));
+    
+//     // Calculate the first sqrt expression (same for all functions)
+//     complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / pow(pow(q1, 2) + pow(q4, 2), 2);
+//     complex<double> term2_a = (2 * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / (3. * (pow(q1, 2) + pow(q4, 2)));
+    
+//     // Complex cubic root calculation
+//     complex<double> cubic_numerator = -12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
+//                             12*(pow(q1, 2) + pow(q4, 2))*(pow(q3, 2) - pow(q5, 2)) + 
+//                             pow(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2), 2);
+    
+//     // The extremely complex term inside the cubic calculation
+//     complex<double> big_term = 108*(pow(q1, 2) + pow(q4, 2))*pow(q2*q3 - q4*q5, 2) + 
+//                      108*pow(q1*q2 + q4*q5, 2)*(pow(q3, 2) - pow(q5, 2)) - 
+//                      36*(q2*q3 - q4*q5)*(q1*q2 + q4*q5)*(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2)) - 
+//                      72*(pow(q1, 2) + pow(q4, 2))*(pow(q3, 2) - pow(q5, 2))*(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2)) + 
+//                      2*pow(pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2), 3);
+
+//     // The square root inside the cubic term
+//     complex<double> inner_sqrt = sqrt(-4. * pow(cubic_numerator, 3) + pow(big_term, 2));
+    
+//     // Complete cubic term
+//     complex<double> big_term_plus_sqrt = big_term + inner_sqrt;
+//     complex<double> cubic_root = pow(big_term_plus_sqrt, (1./3.));
+
+//     complex<double> term3_a = (pow(2, (1./3.)) * cubic_numerator) / (3. * (pow(q1, 2) + pow(q4, 2)) * cubic_root);
+//     complex<double> term4_a = cubic_root / (3. * pow(2, (1./3.)) * (pow(q1, 2) + pow(q4, 2)));
+    
+//     // Calculate the complete first sqrt expression
+//     complex<double> first_sqrt_expr = term1_a - term2_a + term3_a + term4_a;
+//     complex<double> first_sqrt = sqrt(first_sqrt_expr);
+    
+//     // Intermediate calculations for the second sqrt
+//     complex<double> term1_b = (2 * pow(q1*q2 + q4*q5, 2)) / pow(pow(q1, 2) + pow(q4, 2), 2);
+//     complex<double> term2_b = (4 * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / (3. * (pow(q1, 2) + pow(q4, 2)));
+    
+//     // Calculate the differential term
+//     complex<double> diff_term1 = (-8 * pow(q1*q2 + q4*q5, 3)) / pow(pow(q1, 2) + pow(q4, 2), 3);
+//     complex<double> diff_term2 = (16 * (-(q2*q3) + q4*q5)) / (pow(q1, 2) + pow(q4, 2));
+//     complex<double> diff_term3 = (8 * (q1*q2 + q4*q5) * (pow(q2, 2) + 2*q1*q3 - pow(q4, 2) + pow(q5, 2))) / pow(pow(q1, 2) + pow(q4, 2), 2);
+//     complex<double> diff_numerator = diff_term1 + diff_term2 + diff_term3;
+//     complex<double> diff_denom = 4. * first_sqrt;
+//     complex<double> diff_term = diff_numerator / diff_denom;
+    
+//     // Calculate the four versions of the second sqrt expression
+//     // We need different versions based on the sign pattern in the original code
+//     complex<double> second_sqrt_expr_1_2 = term1_b - term2_b - term3_a - term4_a - diff_term; // For functions 1, 2
+//     complex<double> second_sqrt_expr_3_4 = term1_b - term2_b - term3_a - term4_a - diff_term; // For functions 3, 4
+//     complex<double> second_sqrt_expr_5_6 = term1_b - term2_b - term3_a - term4_a + diff_term; // For functions 5, 6
+//     complex<double> second_sqrt_expr_7_8 = term1_b - term2_b - term3_a - term4_a + diff_term; // For functions 7, 8
+    
+//     complex<double> second_sqrt_1_2 = sqrt(second_sqrt_expr_1_2);
+//     complex<double> second_sqrt_3_4 = sqrt(second_sqrt_expr_3_4);
+//     complex<double> second_sqrt_5_6 = sqrt(second_sqrt_expr_5_6);
+//     complex<double> second_sqrt_7_8 = sqrt(second_sqrt_expr_7_8);
+    
+//     // Calculate half values for convenience
+//     complex<double> half_first_sqrt = first_sqrt / 2.0;
+//     complex<double> half_second_sqrt_1_2 = second_sqrt_1_2 / 2.0;
+//     complex<double> half_second_sqrt_3_4 = second_sqrt_3_4 / 2.0;
+//     complex<double> half_second_sqrt_5_6 = second_sqrt_5_6 / 2.0;
+//     complex<double> half_second_sqrt_7_8 = second_sqrt_7_8 / 2.0;
+    
+//     // Calculate all 8 solutions using the correct combinations
+//     // soln1: sign before acos = -, sign before first sqrt = -, sign before second sqrt = -
+//     solutions[0] = -arccos(base_term - half_first_sqrt - half_second_sqrt_1_2);
+    
+//     // soln2: sign before acos = +, sign before first sqrt = -, sign before second sqrt = -
+//     solutions[1] = arccos(base_term - half_first_sqrt - half_second_sqrt_1_2);
+    
+//     // soln3: sign before acos = -, sign before first sqrt = -, sign before second sqrt = +
+//     solutions[2] = -arccos(base_term - half_first_sqrt + half_second_sqrt_3_4);
+    
+//     // soln4: sign before acos = +, sign before first sqrt = -, sign before second sqrt = +
+//     solutions[3] = arccos(base_term - half_first_sqrt + half_second_sqrt_3_4);
+    
+//     // soln5: sign before acos = -, sign before first sqrt = +, sign before second sqrt = -
+//     solutions[4] = -arccos(base_term + half_first_sqrt - half_second_sqrt_5_6);
+    
+//     // soln6: sign before acos = +, sign before first sqrt = +, sign before second sqrt = -
+//     solutions[5] = arccos(base_term + half_first_sqrt - half_second_sqrt_5_6);
+    
+//     // soln7: sign before acos = -, sign before first sqrt = +, sign before second sqrt = +
+//     solutions[6] = -arccos(base_term + half_first_sqrt + half_second_sqrt_7_8);
+    
+//     // soln8: sign before acos = +, sign before first sqrt = +, sign before second sqrt = +
+//     solutions[7] = arccos(base_term + half_first_sqrt + half_second_sqrt_7_8);
+    
+//     return solutions;
+// }
 
 double soln1(double q1, double q2, double q3, double q4, double q5){
     double out = -acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 

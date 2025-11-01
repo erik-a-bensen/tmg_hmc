@@ -37,6 +37,8 @@ PYBIND11_MODULE(compiled, m) {
             return out;
         },
         R"pbdoc(
+            calc_all_solutions(x: np.ndarray, xdot: np.ndarray, A: np.ndarray, b: np.ndarray) -> np.ndarray
+
             Compute all 8 solutions for the full quadratic constraint hit time.
 
             This function computes all eight possible hit times for the quadratic constraint

@@ -35,6 +35,12 @@ test = [
     "pytest-cov",
 ]
 
+dev = [
+    "pybind11",
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
 [project.urls]
 Homepage = "https://github.com/erik-a-bensen/tmg_hmc"
 Repository = "https://github.com/erik-a-bensen/tmg_hmc"
