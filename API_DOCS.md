@@ -1,6 +1,6 @@
 # API Reference
 
-> **Package:** `tmg_hmc` v0.0.14
+> **Package:** `tmg_hmc` v0.1.0
 >
 > This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
 
@@ -1471,7 +1471,7 @@ OSError<br>
 ## `get_sparse_elements`
 
 ```python
-get_sparse_elements(A: numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None]
+get_sparse_elements(A: numpy.ndarray | None | scipy.sparse._coo.coo_matrix) -> Tuple[numpy.ndarray | None | scipy.sparse._coo.coo_matrix, numpy.ndarray | None | scipy.sparse._coo.coo_matrix, numpy.ndarray | None | scipy.sparse._coo.coo_matrix]
 ```
 
 Extracts the row, column, and data elements from a sparse matrix.
@@ -1489,7 +1489,7 @@ Tuple[Array, Array, Array]<br>
 ## `sparsify`
 
 ```python
-sparsify(A: numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None
+sparsify(A: numpy.ndarray | None | scipy.sparse._coo.coo_matrix) -> numpy.ndarray | None | scipy.sparse._coo.coo_matrix
 ```
 
 Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
@@ -1507,7 +1507,7 @@ Array<br>
 ## `to_scalar`
 
 ```python
-to_scalar(x: numpy.ndarray | torch.Tensor | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
+to_scalar(x: numpy.ndarray | None | scipy.sparse._coo.coo_matrix | float) -> <class 'float'>
 ```
 
 Converts a scalar array or a float to a float.
@@ -1524,7 +1524,53 @@ float<br>
 
 ---
 
-# Quadratic Solns Module
+# Compiled Module
+
+## `calc_all_solutions`
+
+```python
+calc_all_solutions(...)
+```
+
+calc_all_solutions(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> numpy.typing.NDArray[numpy.float64]
+
+
+Compute all 8 solutions for the full quadratic constraint hit time.
+
+This function computes all eight possible hit times for the quadratic constraint<br>
+used in Hamiltonian Monte Carlo sampling, following the derivations in Pakman<br>
+and Paninski (2014).
+
+Parameters<br>
+----------<br>
+q1 : float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
+q2 : float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41.<br>
+q3 : float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42.<br>
+q4 : float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43.<br>
+q5 : float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44.
+
+Returns<br>
+-------<br>
+numpy.ndarray<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A 1D NumPy array of length 8 containing all computed solutions.
+
+Notes<br>
+-----<br>
+The solutions are derived from the quartic equation associated with the<br>
+quadratic constraint hit time (Eqns 2.48–2.53 in the reference). These expressions<br>
+were computed symbolically in Mathematica, exported to C, and then optimized<br>
+for performance by eliminating redundant calculations.
+
+Memory management is handled automatically.
+
+---
+
+# Quad Solns Module
 
 ## `soln1`
 
@@ -1561,7 +1607,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln2`
@@ -1599,7 +1645,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln3`
@@ -1637,7 +1683,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln4`
@@ -1675,7 +1721,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln5`
@@ -1713,7 +1759,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln6`
@@ -1751,7 +1797,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln7`
@@ -1789,7 +1835,7 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
 
 ## `soln8`
@@ -1827,5 +1873,5 @@ Mathematica and then exported to Fortran which uses the same syntax as Python fo
 See resources/HMC_exact_soln.nb for details.
 
 It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled shared library accessed via `get_shared_library()` for efficient computation of all solutions.<br>
+use the compiled module for efficient computation of all solutions.<br>
 This function is maintained for reference and validation purposes.
