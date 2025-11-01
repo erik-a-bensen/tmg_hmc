@@ -1,7 +1,13 @@
 import numpy as np 
 from cmath import acos
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
-from torch import Tensor, sparse_coo
+
+from tmg_hmc import _TORCH_AVAILABLE
+if _TORCH_AVAILABLE:
+    from torch import Tensor, sparse_coo
+else:
+    Tensor = None
+    
 from typing import TypeAlias, Tuple
 import platform
 import ctypes

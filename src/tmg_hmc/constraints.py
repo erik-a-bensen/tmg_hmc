@@ -1,10 +1,17 @@
 from __future__ import annotations
 import numpy as np
 from typing import Protocol, Tuple, Protocol
-import torch
+from tmg_hmc import _TORCH_AVAILABLE
+if _TORCH_AVAILABLE:
+    import torch
+    from torch import Tensor
+else:
+    torch = None
+    Tensor = None
 from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements, get_shared_library
 from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 from tmg_hmc.compiled import calc_all_solutions
+import warnings
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
@@ -85,7 +92,7 @@ class Constraint(Protocol):
             Reflected velocity
         """
         f = self.normal(x)
-        if isinstance(xdot, torch.Tensor):
+        if isinstance(xdot, Tensor):
             norm = torch.sqrt(f.T @ f)
         else:
             norm = np.sqrt(f.T @ f)
@@ -117,7 +124,7 @@ class Constraint(Protocol):
         
         # Convert tensors to CPU
         for k, v in d.items():
-            if isinstance(v, torch.Tensor):
+            if isinstance(v, Tensor):
                 d[k] = v.cpu()
         
         d['type'] = self.__class__.__name__
@@ -142,7 +149,7 @@ class Constraint(Protocol):
         """
         if gpu:
             for k, v in d.items():
-                if isinstance(v, torch.Tensor):
+                if isinstance(v, Tensor):
                     d[k] = v.cuda()
         if d['type'] == 'LinearConstraint':
             return LinearConstraint(d['f'], d['c'])
@@ -431,6 +438,9 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         SimpleQuadraticConstraint
             The constructed constraint
         """
+        if gpu and not _TORCH_AVAILABLE:
+            gpu = False
+            warnings.warn("GPU requested but PyTorch is not available. Loading on CPU instead.")
         sparse = d['sparse']
         A = d['A_orig']
         c = d['c']
@@ -438,9 +448,9 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         
         # Move to GPU if requested
         if gpu:
-            if isinstance(S, torch.Tensor):
+            if isinstance(S, Tensor):
                 S = S.cuda()
-            if isinstance(A, torch.Tensor):
+            if isinstance(A, Tensor):
                 A = A.cuda()
         
         return cls(A, c, S, sparse, d.get('compiled', True))
@@ -626,6 +636,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         sparse parameter.
         It is highly recommended to use compiled code for performance reasons.
         """
+        if compiled and not _TORCH_AVAILABLE:
+            compiled = False
+            warnings.warn("Compiled code requested but PyTorch is not available. Using pure Python implementation instead.")
         self.c = c
         self.b = b
         if isinstance(A, Sparse):
@@ -660,6 +673,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         QuadraticConstraint
             The constructed constraint
         """
+        if gpu and not _TORCH_AVAILABLE:
+            gpu = False
+            warnings.warn("GPU requested but PyTorch is not available. Loading on CPU instead.")
         sparse = d['sparse']
         A = d['A_orig']
         c = d['c']
@@ -668,11 +684,11 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         
         # Move to GPU if requested
         if gpu:
-            if isinstance(S, torch.Tensor):
+            if isinstance(S, Tensor):
                 S = S.cuda()
-            if isinstance(b, torch.Tensor):
+            if isinstance(b, Tensor):
                 b = b.cuda()
-            if isinstance(A, torch.Tensor):
+            if isinstance(A, Tensor):
                 A = A.cuda()
         
         return cls(A, b, c, S, sparse, d.get('compiled', True))

@@ -1,9 +1,13 @@
 from __future__ import annotations
 import numpy as np
 from typing import Tuple
+from tmg_hmc import _TORCH_AVAILABLE
+if _TORCH_AVAILABLE:
+    import torch 
+else:
+    torch = None
 from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
 from tmg_hmc.utils import Array, sparsify
-import torch
 import pickle
 
 class TMGSampler:
