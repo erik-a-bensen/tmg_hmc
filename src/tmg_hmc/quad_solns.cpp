@@ -4,67 +4,89 @@
 using namespace std;
 
 // Function to compute all 8 solutions for the quadratic constraint hit time
+
 double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5) {
     double* solutions = new double[8];
 
     // Common denominators
-    double q1_sq = q1 * q1;
-    double q4_sq = q4 * q4;
-    double denom = q1_sq + q4_sq;
+    const double q1_sq = q1 * q1;
+    const double q4_sq = q4 * q4;
+    const double denom = q1_sq + q4_sq;
 
     // Base term
-    complex<double> base_term = -0.5 * (q1*q2 + q4*q5) / denom;
+    const complex<double> base_term = -0.5 * (q1*q2 + q4*q5) / denom;
 
     // First sqrt term
-    complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / (denom * denom);
-    complex<double> term2_a = 2.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
+    const complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / (denom * denom);
+    const complex<double> term2_a = 2.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
 
     // Cubic term
-    complex<double> cubic_num = -12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) 
-                                + 12*denom*(pow(q3,2) - pow(q5,2)) 
-                                + pow(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2),2);
+    const complex<double> A = q1*q2 + q4*q5;
+    const complex<double> B = q2*q3 - q4*q5;
+    const complex<double> C = pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2);
+    const complex<double> C_sq = C * C;
+    const complex<double> C_cu = C_sq * C;
+    const complex<double> B_sq = B * B;
+    const complex<double> A_sq = A * A;
 
-    complex<double> big_term = 108*denom*pow(q2*q3 - q4*q5,2) 
-                               + 108*pow(q1*q2 + q4*q5,2)*(pow(q3,2) - pow(q5,2)) 
-                               - 36*(q2*q3 - q4*q5)*(q1*q2 + q4*q5)*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) 
-                               - 72*denom*(pow(q3,2) - pow(q5,2))*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) 
-                               + 2*pow(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2),3);
+    const complex<double> cubic_num = -12.0*B*A + 12.0*denom*(pow(q3,2) - pow(q5,2)) + C_sq;
 
-    complex<double> inner_sqrt = sqrt(-4.0*pow(cubic_num,3) + pow(big_term,2));
-    complex<double> cubic_root = pow(big_term + inner_sqrt, 1.0/3.0);
+    const complex<double> big_term = 108.0*denom*B_sq
+                                    + 108.0*A_sq*(pow(q3,2) - pow(q5,2))
+                                    - 36.0*B*A*C
+                                    - 72.0*denom*(pow(q3,2) - pow(q5,2))*C
+                                    + 2.0*C_cu;
 
-    complex<double> term3_a = pow(2.0,1.0/3.0) * cubic_num / (3.0 * denom * cubic_root);
-    complex<double> term4_a = cubic_root / (3.0 * pow(2.0, 1.0/3.0) * denom);
+    const complex<double> inner_sqrt = sqrt(-4.0*pow(cubic_num,3) + pow(big_term,2));
+    const complex<double> cubic_root = pow(big_term + inner_sqrt, 1.0/3.0);
 
-    complex<double> first_sqrt = sqrt(term1_a - term2_a + term3_a + term4_a);
-    complex<double> half_first_sqrt = first_sqrt / 2.0;
+    const complex<double> pow2_1_3 = pow(2.0, 1.0/3.0);
+    const complex<double> term3_a = pow2_1_3 * cubic_num / (3.0 * denom * cubic_root);
+    const complex<double> term4_a = cubic_root / (3.0 * pow2_1_3 * denom);
+
+    const complex<double> first_sqrt = sqrt(term1_a - term2_a + term3_a + term4_a);
+    const complex<double> half_first_sqrt = first_sqrt * 0.5;
 
     // Second sqrt term
-    complex<double> term1_b = 2.0 * pow(q1*q2 + q4*q5,2) / (denom * denom);
-    complex<double> term2_b = 4.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
+    const complex<double> term1_b = 2.0 * A_sq / (denom * denom);
+    const complex<double> term2_b = 4.0 * C / (3.0 * denom);
 
-    complex<double> diff_term = ((-8*pow(q1*q2 + q4*q5,3))/pow(denom,3) 
-                                 + 16*(-q2*q3 + q4*q5)/denom 
-                                 + 8*(q1*q2 + q4*q5)*(pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2))/pow(denom,2)) 
-                                / (4.0 * first_sqrt);
+    const complex<double> diff_term = (
+        (-8.0*A*A_sq)/pow(denom,3)
+        + 16.0*(-B)/denom
+        + 8.0*A*C/pow(denom,2)
+    ) / (4.0 * first_sqrt);
 
-    complex<double> second_sqrt_minus = sqrt(term1_b - term2_b - term3_a - term4_a - diff_term);
-    complex<double> second_sqrt_plus  = sqrt(term1_b - term2_b - term3_a - term4_a + diff_term);
+    const complex<double> common_expr = term1_b - term2_b - term3_a - term4_a;
+    const complex<double> second_sqrt_minus = sqrt(common_expr - diff_term);
+    const complex<double> second_sqrt_plus  = sqrt(common_expr + diff_term);
 
-    complex<double> half_second_sqrt_minus = second_sqrt_minus / 2.0;
-    complex<double> half_second_sqrt_plus  = second_sqrt_plus  / 2.0;
+    const complex<double> half_second_sqrt_minus = second_sqrt_minus * 0.5;
+    const complex<double> half_second_sqrt_plus  = second_sqrt_plus  * 0.5;
 
-    // Generate all 8 solutions
-    for (int i = 0; i < 8; ++i) {
-        double acos_sign        = (i & 1) ? 1.0 : -1.0;  // multiply final double
-        double second_sqrt_sign = (i & 2) ? 1.0 : -1.0;  // multiply complex
-        double first_sqrt_sign  = (i & 4) ? 1.0 : -1.0;  // multiply complex
+    // Precompute all four possible sqrt combinations (to avoid branch inside loop)
+    const complex<double> args[4] = {
+        base_term - half_first_sqrt - half_second_sqrt_minus, // 000: -, -, -
+        base_term - half_first_sqrt + half_second_sqrt_minus, // 010: -, -, +
+        base_term + half_first_sqrt - half_second_sqrt_plus,  // 100: +, +, -
+        base_term + half_first_sqrt + half_second_sqrt_plus   // 110: +, +, +
+    };
 
-        complex<double> half_second = (first_sqrt_sign > 0.0) ? half_second_sqrt_plus : half_second_sqrt_minus;
-        complex<double> arg = base_term + first_sqrt_sign * half_first_sqrt + second_sqrt_sign * half_second;
+    // Precompute arccos for all combinations
+    const double acos1 = arccos(base_term - half_first_sqrt - half_second_sqrt_minus);
+    const double acos2 = arccos(base_term - half_first_sqrt + half_second_sqrt_minus);
+    const double acos3 = arccos(base_term + half_first_sqrt - half_second_sqrt_plus);
+    const double acos4 = arccos(base_term + half_first_sqrt + half_second_sqrt_plus);
 
-        solutions[i] = acos_sign * arccos(arg);
-    }
+    // Assign all 8 solutions
+    solutions[0] = -acos1;
+    solutions[1] =  acos1;
+    solutions[2] = -acos2;
+    solutions[3] =  acos2;
+    solutions[4] = -acos3;
+    solutions[5] =  acos3;
+    solutions[6] = -acos4;
+    solutions[7] =  acos4;
 
     return solutions;
 }
