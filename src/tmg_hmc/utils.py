@@ -1,7 +1,7 @@
 import numpy as np 
 from cmath import acos
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
-from typing import TypeAlias, Tuple
+from typing import Tuple, Union
 import os
 
 from tmg_hmc import _TORCH_AVAILABLE
@@ -14,8 +14,8 @@ else:
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
 
-Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
-Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix 
+Array = Union[np.ndarray, Tensor, coo_matrix, None]
+Sparse = Union[csc_matrix, csr_matrix, coo_matrix]
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 def compiled_library_available() -> bool:
@@ -83,13 +83,13 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     else:
         raise ValueError(f"Unknown type {type(A)}")
 
-def to_scalar(x: Array | float) -> float:
+def to_scalar(x: Union[Array, float]) -> float:
     """
     Converts a scalar array or a float to a float.
 
     Parameters
     ----------
-    x : Array | float
+    x : Union[Array, float]
         The input value to be converted.
 
     Returns
