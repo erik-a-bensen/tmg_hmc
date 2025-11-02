@@ -33,7 +33,10 @@ gpu = [
 test = [
     "pytest>=7.0",
     "pytest-cov",
+    "hypothesis>=6.100",
 ]
+
+all = ["tmg_hmc[gpu,test]"]
 
 [project.urls]
 Homepage = "https://github.com/erik-a-bensen/tmg_hmc"
