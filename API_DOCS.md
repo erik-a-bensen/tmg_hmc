@@ -1517,7 +1517,7 @@ calc_all_solutions(...)
 calc_all_solutions(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> numpy.typing.NDArray[numpy.float64]
 
 
-calc_all_solutions(x: np.ndarray, xdot: np.ndarray, A: np.ndarray, b: np.ndarray) -> np.ndarray
+calc_all_solutions(q1: float, q2: float, q3: float, q4: float, q5: float) -> np.ndarray
 
 Compute all 8 solutions for the full quadratic constraint hit time.
 
@@ -1551,6 +1551,165 @@ were computed symbolically in Mathematica, exported to C, and then optimized<br>
 for performance by eliminating redundant calculations.
 
 Memory management is handled automatically.
+
+## `soln1`
+
+```python
+soln1(...)
+```
+
+soln1(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the first solution for the quadratic constraint hit time.
+
+Parameters<br>
+----------<br>
+See `calc_all_solutions` for parameter descriptions.
+
+Returns<br>
+-------<br>
+float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed first solution.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
+given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using<br>
+Mathematica and then exported to C. See resources/HMC_exact_soln.nb for details.
+
+It is not recommended to use this function directly due to its complexity. Instead, use 'calc_all_solutions'<br>
+which has been optimized to remove redundant calculations.<br>
+This function is maintained for reference and validation purposes.
+
+## `soln2`
+
+```python
+soln2(...)
+```
+
+soln2(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the second solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln3`
+
+```python
+soln3(...)
+```
+
+soln3(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the third solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln4`
+
+```python
+soln4(...)
+```
+
+soln4(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the fourth solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln5`
+
+```python
+soln5(...)
+```
+
+soln5(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the fifth solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln6`
+
+```python
+soln6(...)
+```
+
+soln6(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the sixth solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln7`
+
+```python
+soln7(...)
+```
+
+soln7(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the seventh solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
+
+## `soln8`
+
+```python
+soln8(...)
+```
+
+soln8(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+
+
+soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
+
+Compute the eighth solution for the quadratic constraint hit time.
+
+Notes<br>
+-----<br>
+DO NOT MODIFY THIS FUNCTION<br>
+See 'soln1' for details. 
 
 ---
 
@@ -1602,35 +1761,10 @@ soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the second of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln3`
 
@@ -1640,35 +1774,10 @@ soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the third of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln4`
 
@@ -1678,35 +1787,10 @@ soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the fourth of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln5`
 
@@ -1716,35 +1800,10 @@ soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the fifth of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln6`
 
@@ -1754,35 +1813,10 @@ soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the sixth of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln7`
 
@@ -1792,35 +1826,10 @@ soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the seventh of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
 
 ## `soln8`
 
@@ -1830,32 +1839,7 @@ soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> <class 'float'>
 
 Computes the eighth of the 8 solutions for the full quadratic constraint hit time.
 
-Parameters<br>
-----------<br>
-q1 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The first parameter defined in Eqn 2.40 of Pakman and Paninski (2014).<br>
-q2 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The second parameter defined in Eqn 2.41 of Pakman and Paninski (2014).<br>
-q3 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The third parameter defined in Eqn 2.42 of Pakman and Paninski (2014).<br>
-q4 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fourth parameter defined in Eqn 2.43 of Pakman and Paninski (2014).<br>
-q5 : float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The fifth parameter defined in Eqn 2.44 of Pakman and Paninski (2014).
-
-Returns<br>
--------<br>
-float<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The computed solution.
-
 Notes<br>
 -----<br>
 DO NOT MODIFY THIS FUNCTION<br>
-The solution is derived from the quartic equation associated with the quadratic constraint hit time<br>
-given in Eqns 2.48 - 2.53 of Pakman and Paninski (2014). The expression is computed exactly using <br>
-Mathematica and then exported to Fortran which uses the same syntax as Python for mathematical operations.<br>
-See resources/HMC_exact_soln.nb for details.
-
-It is not recommended to use this function directly due to its complexity and slow performance. Instead,<br>
-use the compiled module for efficient computation of all solutions.<br>
-This function is maintained for reference and validation purposes.
+See soln1 for details.
