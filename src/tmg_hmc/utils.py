@@ -8,8 +8,7 @@ from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     from torch import Tensor, sparse_coo
 else:
-    class Tensor(object):
-        pass
+    Tensor = type # type placeholder when torch is not available
 
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')

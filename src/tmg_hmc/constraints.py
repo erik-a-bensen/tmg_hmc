@@ -9,8 +9,7 @@ if _TORCH_AVAILABLE:
     from torch import Tensor
 else:
     torch = None
-    class Tensor(object):
-        pass
+    Tensor = type # type placeholder when torch is not available
 
 from tmg_hmc.compiled import calc_all_solutions
 import warnings
