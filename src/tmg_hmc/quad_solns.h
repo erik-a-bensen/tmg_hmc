@@ -3,22 +3,74 @@
 #include <complex>
 #include <cmath>
 #include <vector>
+// #include <iostream>
 
 namespace py = pybind11;
 
-double arccos(std::complex<double> z) {
-    return std::real(std::acos(z));
+std::complex<long double> stable_acos(std::complex<long double> z) {
+    // acos(z) = -i * log(z + sqrt(z^2 - 1))
+    const std::complex<long double> i(0.0, 1.0);
+    const std::complex<long double> one(1.0, 0.0);
+    return -i * std::log(z + i * std::sqrt(one - z * z));
 }
 
+double arccos(std::complex<long double> z) {
+    std::complex<long double> val = stable_acos(z);
+    // Convert long double complex to double complex
+    double real_part = static_cast<double>(std::real(val));
+    double imag_part = static_cast<double>(std::imag(val));
+    if (std::abs(imag_part) > 1e-1) {
+        return std::numeric_limits<double>::quiet_NaN();  // Return NaN for significant imaginary parts
+    }
+    return real_part;
+}
+
+// Allow int * complex<double>
+inline std::complex<double> operator*(int lhs, const std::complex<double>& rhs) {
+    return static_cast<double>(lhs) * rhs;
+}
+
+// Allow complex<double> * int
+inline std::complex<double> operator*(const std::complex<double>& lhs, int rhs) {
+    return lhs * static_cast<double>(rhs);
+}
+
+// Allow same for complex<long double>
+inline std::complex<long double> operator*(int lhs, const std::complex<long double>& rhs) {
+    return static_cast<long double>(lhs) * rhs;
+}
+
+// Allow complex<long double> * int
+inline std::complex<long double> operator*(const std::complex<long double>& lhs, int rhs) {
+    return lhs * static_cast<long double>(rhs);
+}
+
+// Allow complex<long double> * double
+inline std::complex<long double> operator*(const std::complex<long double>& lhs, double rhs) {
+    return lhs * static_cast<long double>(rhs);
+}
+
+// Allow double * complex<long double>
+inline std::complex<long double> operator*(double lhs, const std::complex<long double>& rhs) {
+    return static_cast<long double>(lhs) * rhs;
+}
+
+// Allow complex<long double> / double
+inline std::complex<long double> operator/(const std::complex<long double>& lhs, double rhs) {
+    return lhs / static_cast<long double>(rhs);
+}
+
+
+
 double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5);
-double soln1(double q1, double q2, double q3, double q4, double q5);
-double soln2(double q1, double q2, double q3, double q4, double q5);
-double soln3(double q1, double q2, double q3, double q4, double q5);
-double soln4(double q1, double q2, double q3, double q4, double q5);
-double soln5(double q1, double q2, double q3, double q4, double q5);
-double soln6(double q1, double q2, double q3, double q4, double q5);
-double soln7(double q1, double q2, double q3, double q4, double q5);
-double soln8(double q1, double q2, double q3, double q4, double q5);
+double soln1(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln2(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln3(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln4(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln5(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln6(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln7(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
+double soln8(std::complex<double> q1in, std::complex<double> q2in, std::complex<double> q3in, std::complex<double> q4in, std::complex<double> q5in);
 
 /**
  * Pybind11 module for computing all 8 solutions for the full quadratic constraint hit time.

@@ -10,7 +10,10 @@ if _TORCH_AVAILABLE:
 else:
     torch = None
     Tensor = type # type placeholder when torch is not available
-
+    class _TensorPlaceholder(object):
+        pass
+    Tensor = _TensorPlaceholder  # type: ignore
+    
 from tmg_hmc.compiled import calc_all_solutions
 import warnings
 

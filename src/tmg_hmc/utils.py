@@ -1,5 +1,5 @@
 import numpy as np 
-from cmath import acos
+import cmath
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
 from typing import Tuple, TypeAlias
 import os
@@ -8,7 +8,9 @@ from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     from torch import Tensor, sparse_coo
 else:
-    Tensor = type # type placeholder when torch is not available
+    class _TensorPlaceholder(object):
+        pass
+    Tensor = _TensorPlaceholder  # type: ignore
 
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
@@ -104,6 +106,22 @@ def to_scalar(x: Array | float) -> float:
         return x[0]
     return x[0,0]
 
+def stable_acos(x: complex) -> complex:
+    """
+    Computes a numerically stable arccosine for complex numbers.
+
+    Parameters
+    ----------
+    x : complex
+        The input complex number.
+
+    Returns
+    -------
+    complex
+        The arccosine of the input complex number.
+    """
+    return -1j * cmath.log(x + 1j*cmath.sqrt(1 - x*x))
+
 def arccos(x: float) -> float:
     """
     Computes the real component of the arccosine of a value.
@@ -117,13 +135,8 @@ def arccos(x: float) -> float:
     -------
     float
         The real component of the arccosine of the input value.
-
-    Notes
-    -----
-    Uses the cmath.acos function to handle complex values and returns the real part.
-    Can potentially create ghost values if the input is outside the range [-1, 1]. 
-    However, due to the complexity of the solution expressions this is necessary for 
-    numerical stability and ghost solutions are filtered out later.
     """
-    val = acos(x)
+    val = stable_acos(x)
+    if abs(val.imag) > 1e-1:
+        return np.nan  # Return NaN for significant imaginary parts
     return val.real

@@ -8,63 +8,63 @@ double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5
     double* solutions = new double[8];
 
     // Common denominators
-    const double q1_sq = q1 * q1;
-    const double q4_sq = q4 * q4;
-    const double denom = q1_sq + q4_sq;
+    const long double q1_sq = q1 * q1;
+    const long double q4_sq = q4 * q4;
+    const long double denom = q1_sq + q4_sq;
 
     // Base term
-    const complex<double> base_term = -0.5 * (q1*q2 + q4*q5) / denom;
+    const complex<long double> base_term = -0.5 * (q1*q2 + q4*q5) / denom;
 
     // First sqrt term
-    const complex<double> term1_a = pow(q1*q2 + q4*q5, 2) / (denom * denom);
-    const complex<double> term2_a = 2.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
+    const complex<long double> term1_a = pow(q1*q2 + q4*q5, 2) / (denom * denom);
+    const complex<long double> term2_a = 2.0 * (pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2)) / (3.0 * denom);
 
     // Cubic term
-    const complex<double> A = q1*q2 + q4*q5;
-    const complex<double> B = q2*q3 - q4*q5;
-    const complex<double> C = pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2);
-    const complex<double> C_sq = C * C;
-    const complex<double> C_cu = C_sq * C;
-    const complex<double> B_sq = B * B;
-    const complex<double> A_sq = A * A;
+    const complex<long double> A = q1*q2 + q4*q5;
+    const complex<long double> B = q2*q3 - q4*q5;
+    const complex<long double> C = pow(q2,2) + 2*q1*q3 - q4_sq + pow(q5,2);
+    const complex<long double> C_sq = C * C;
+    const complex<long double> C_cu = C_sq * C;
+    const complex<long double> B_sq = B * B;
+    const complex<long double> A_sq = A * A;
 
-    const complex<double> cubic_num = -12.0*B*A + 12.0*denom*(pow(q3,2) - pow(q5,2)) + C_sq;
+    const complex<long double> cubic_num = -12.0*B*A + 12.0*denom*(pow(q3,2) - pow(q5,2)) + C_sq;
 
-    const complex<double> big_term = 108.0*denom*B_sq
+    const complex<long double> big_term = 108.0*denom*B_sq
                                     + 108.0*A_sq*(pow(q3,2) - pow(q5,2))
                                     - 36.0*B*A*C
                                     - 72.0*denom*(pow(q3,2) - pow(q5,2))*C
                                     + 2.0*C_cu;
 
-    const complex<double> inner_sqrt = sqrt(-4.0*pow(cubic_num,3) + pow(big_term,2));
-    const complex<double> cubic_root = pow(big_term + inner_sqrt, 1.0/3.0);
+    const complex<long double> inner_sqrt = sqrt(-4.0*pow(cubic_num,3) + pow(big_term,2));
+    const complex<long double> cubic_root = pow(big_term + inner_sqrt, 1.0/3.0);
 
-    const complex<double> pow2_1_3 = pow(2.0, 1.0/3.0);
-    const complex<double> term3_a = pow2_1_3 * cubic_num / (3.0 * denom * cubic_root);
-    const complex<double> term4_a = cubic_root / (3.0 * pow2_1_3 * denom);
+    const complex<long double> pow2_1_3 = pow(2.0, 1.0/3.0);
+    const complex<long double> term3_a = pow2_1_3 * cubic_num / (3.0 * denom * cubic_root);
+    const complex<long double> term4_a = cubic_root / (3.0 * pow2_1_3 * denom);
 
-    const complex<double> first_sqrt = sqrt(term1_a - term2_a + term3_a + term4_a);
-    const complex<double> half_first_sqrt = first_sqrt * 0.5;
+    const complex<long double> first_sqrt = sqrt(term1_a - term2_a + term3_a + term4_a);
+    const complex<long double> half_first_sqrt = first_sqrt * 0.5;
 
     // Second sqrt term
-    const complex<double> term1_b = 2.0 * A_sq / (denom * denom);
-    const complex<double> term2_b = 4.0 * C / (3.0 * denom);
+    const complex<long double> term1_b = 2.0 * A_sq / (denom * denom);
+    const complex<long double> term2_b = 4.0 * C / (3.0 * denom);
 
-    const complex<double> diff_term = (
+    const complex<long double> diff_term = (
         (-8.0*A*A_sq)/pow(denom,3)
         + 16.0*(-B)/denom
         + 8.0*A*C/pow(denom,2)
     ) / (4.0 * first_sqrt);
 
-    const complex<double> common_expr = term1_b - term2_b - term3_a - term4_a;
-    const complex<double> second_sqrt_minus = sqrt(common_expr - diff_term);
-    const complex<double> second_sqrt_plus  = sqrt(common_expr + diff_term);
+    const complex<long double> common_expr = term1_b - term2_b - term3_a - term4_a;
+    const complex<long double> second_sqrt_minus = sqrt(common_expr - diff_term);
+    const complex<long double> second_sqrt_plus  = sqrt(common_expr + diff_term);
 
-    const complex<double> half_second_sqrt_minus = second_sqrt_minus * 0.5;
-    const complex<double> half_second_sqrt_plus  = second_sqrt_plus  * 0.5;
+    const complex<long double> half_second_sqrt_minus = second_sqrt_minus * 0.5;
+    const complex<long double> half_second_sqrt_plus  = second_sqrt_plus  * 0.5;
 
-    // Precompute all four possible sqrt combinations (to avoid branch inside loop)
-    const complex<double> args[4] = {
+    // Precompute all four possible sqrt combinations
+    const complex<long double> args[4] = {
         base_term - half_first_sqrt - half_second_sqrt_minus, // 000: -, -, -
         base_term - half_first_sqrt + half_second_sqrt_minus, // 010: -, -, +
         base_term + half_first_sqrt - half_second_sqrt_plus,  // 100: +, +, -
@@ -90,8 +90,13 @@ double* calc_all_solutions(double q1, double q2, double q3, double q4, double q5
     return solutions;
 }
 
-double soln1(double q1, double q2, double q3, double q4, double q5){
-    double out = -acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
+double soln1(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = -arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -210,8 +215,13 @@ double soln1(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln2(double q1, double q2, double q3, double q4, double q5){
-    double out = acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
+double soln2(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -330,8 +340,13 @@ double soln2(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln3(double q1, double q2, double q3, double q4, double q5){
-    double out = -acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
+double soln3(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = -arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -450,8 +465,13 @@ double soln3(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln4(double q1, double q2, double q3, double q4, double q5){
-    double out = acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
+double soln4(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) - 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -570,8 +590,13 @@ double soln4(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln5(double q1, double q2, double q3, double q4, double q5){
-    double out = -acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
+double soln5(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = -arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -690,8 +715,13 @@ double soln5(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln6(double q1, double q2, double q3, double q4, double q5){
-    double out = acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
+double soln6(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -810,8 +840,13 @@ double soln6(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln7(double q1, double q2, double q3, double q4, double q5){
-    double out = -acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
+double soln7(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = -arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
@@ -930,8 +965,13 @@ double soln7(double q1, double q2, double q3, double q4, double q5){
     return out;
 };
 
-double soln8(double q1, double q2, double q3, double q4, double q5){
-    double out = acos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
+double soln8(complex<double> q1in, complex<double> q2in, complex<double> q3in, complex<double> q4in, complex<double> q5in){
+   complex<long double> q1(real(q1in), imag(q1in));
+   complex<long double> q2(real(q2in), imag(q2in));
+   complex<long double> q3(real(q3in), imag(q3in));
+   complex<long double> q4(real(q4in), imag(q4in));
+   complex<long double> q5(real(q5in), imag(q5in));
+   double out = arccos(-0.5*(q1*q2 + q4*q5)/(pow(q1,2) + pow(q4,2)) + 
     sqrt(pow(q1*q2 + q4*q5,2)/pow(pow(q1,2) + pow(q4,2),2) - 
        (2*(pow(q2,2) + 2*q1*q3 - pow(q4,2) + pow(q5,2)))/(3.*(pow(q1,2) + pow(q4,2))) + 
        (pow(2,(1./3.))*(-12*(q2*q3 - q4*q5)*(q1*q2 + q4*q5) + 
