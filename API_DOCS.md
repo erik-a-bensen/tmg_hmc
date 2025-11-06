@@ -1430,13 +1430,6 @@ Returns<br>
 float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The real component of the arccosine of the input value.
 
-Notes<br>
------<br>
-Uses the cmath.acos function to handle complex values and returns the real part.<br>
-Can potentially create ghost values if the input is outside the range [-1, 1]. <br>
-However, due to the complexity of the solution expressions this is necessary for <br>
-numerical stability and ghost solutions are filtered out later.
-
 ## `compiled_library_available`
 
 ```python
@@ -1453,7 +1446,7 @@ bool<br>
 ## `get_sparse_elements`
 
 ```python
-get_sparse_elements(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None]
+get_sparse_elements(A: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None]
 ```
 
 Extracts the row, column, and data elements from a sparse matrix.
@@ -1471,7 +1464,7 @@ Tuple[Array, Array, Array]<br>
 ## `sparsify`
 
 ```python
-sparsify(A: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None
+sparsify(A: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None
 ```
 
 Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
@@ -1486,10 +1479,28 @@ Returns<br>
 Array<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The sparse COO matrix representation of the input array.
 
+## `stable_acos`
+
+```python
+stable_acos(x: complex) -> <class 'complex'>
+```
+
+Computes a numerically stable arccosine for complex numbers.
+
+Parameters<br>
+----------<br>
+x : complex<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The input complex number.
+
+Returns<br>
+-------<br>
+complex<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The arccosine of the input complex number.
+
 ## `to_scalar`
 
 ```python
-to_scalar(x: numpy.ndarray | tmg_hmc.utils.Tensor | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
+to_scalar(x: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
 ```
 
 Converts a scalar array or a float to a float.
@@ -1558,7 +1569,7 @@ Memory management is handled automatically.
 soln1(...)
 ```
 
-soln1(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln1(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1591,7 +1602,7 @@ This function is maintained for reference and validation purposes.
 soln2(...)
 ```
 
-soln2(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln2(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1609,7 +1620,7 @@ See 'soln1' for details.
 soln3(...)
 ```
 
-soln3(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln3(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1627,7 +1638,7 @@ See 'soln1' for details.
 soln4(...)
 ```
 
-soln4(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln4(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1645,7 +1656,7 @@ See 'soln1' for details.
 soln5(...)
 ```
 
-soln5(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln5(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1663,7 +1674,7 @@ See 'soln1' for details.
 soln6(...)
 ```
 
-soln6(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln6(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1681,7 +1692,7 @@ See 'soln1' for details.
 soln7(...)
 ```
 
-soln7(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln7(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1699,7 +1710,7 @@ See 'soln1' for details.
 soln8(...)
 ```
 
-soln8(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> float
+soln8(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
 
 
 soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
