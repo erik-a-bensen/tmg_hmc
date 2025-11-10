@@ -9,11 +9,11 @@ tags:
 authors:
   - name: Erik A. Bensen
     orcid: 0000-0002-2294-1421
-    equal-contrib: true
+    # equal-contrib: true
     affiliation: 1 # (Multiple affiliations must be quoted)
-#   - name: Author Without ORCID
-#     equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-#     affiliation: 2
+  - name: Mikael Kuusela
+    # equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
+    affiliation: 1
 #   - name: Author with no affiliation
 #     corresponding: true # (This is how to denote the corresponding author)
 #     affiliation: 3
