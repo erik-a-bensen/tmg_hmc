@@ -1,5 +1,5 @@
 ---
-title: 'tmg_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints'
+title: 'tmg_hmc: A Python package for Exact Hamiltonian Monte Carlo Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints'
 tags:
   - Python
   - statistics
@@ -10,12 +10,13 @@ authors:
   - name: Erik A. Bensen
     orcid: 0000-0002-2294-1421
     # equal-contrib: true
+    corresponding: true # (This is how to denote the corresponding author)
     affiliation: 1 # (Multiple affiliations must be quoted)
   - name: Mikael Kuusela
+    orcid: 0000-0001-6875-945X
     # equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: 1
 #   - name: Author with no affiliation
-#     corresponding: true # (This is how to denote the corresponding author)
 #     affiliation: 3
 #   - given-names: Ludwig
 #     dropping-particle: van
@@ -50,7 +51,7 @@ efficient numerical tools, many of which require the same base code (e.g., for
 performing numerical orbit integration). -->
 
 tmg_hmc is a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated 
-Multivariate Gaussians presented [@Pakman:2014]. Hamiltonian Monte Carlo (HMC) is a 
+Multivariate Gaussians presented in @Pakman:2014. Hamiltonian Monte Carlo (HMC) is a 
 gradient-based Markov Chain Monte Carlo (MCMC) method where 
 
 # Statement of need
