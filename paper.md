@@ -40,33 +40,21 @@ bibliography: paper.bib
 
 # Summary
 
-Markov Chain Monte Carlo is a cornerstone of statistical methods that allows us to approximate intractable quantities by sampling from complex multivariate probability distributions. One large class of important distributions are constrained distributions. We present tmg_hmc: a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians presented by Pakman and Paninski [@Pakman:2014]. This method leverages the high dimensional scalability and well mixing properties of Hamiltonian Monte Carlo while maintaining speed and simplicity since the Hamiltonian equations for a Gaussian distribution are analytically solvable. This means that the sampler always accepts and there are no tunable parameters. Our implementation replaces the existing R implementation tmg and matlab implementation tmg_hmc both of which are deprecated and no longer maintained. The R package was archived from CRAN in 2021 for this reason. Additionally, we expand our implementation by including sparse matrix operations for sparse constraint handling and optional GPU acceleration for high dimensional problems such as truncated Gaussian processes. Finally, we accelerate the Quadratic constraint hit time calculation by using a speed optimized C++ implementation.
+Markov Chain Monte Carlo is a cornerstone of statistical methods that allows us to approximate intractable quantities by sampling from complex multivariate probability distributions. One large class of important distributions are constrained distributions. We present `tmg_hmc`: a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians presented by Pakman and Paninski [@Pakman:2014]. This method leverages the high dimensional scalability and well mixing properties of Hamiltonian Monte Carlo while maintaining speed and simplicity since the Hamiltonian equations for a Gaussian distribution are analytically solvable. This means that the sampler always accepts and there are no tunable parameters. Our implementation replaces the existing R implementation `tmg` and matlab implementation `tmg_hmc` both of which are deprecated and no longer maintained. The R package was archived from CRAN in 2021 for this reason. Additionally, we expand our implementation by including sparse matrix operations for sparse constraint handling and optional GPU acceleration for high dimensional problems such as truncated Gaussian processes. Finally, we accelerate the Quadratic constraint hit time calculation by using a speed optimized C++ implementation and binding it to be called with Python.
  
 # Statement of need
 
-Markov Chain Monte Carlo has been a foundational statistical technique that allows the approximation of intractable quantities from samples of complex, multivarate probability distriutions [@Robert:1999]. This has allowed for significant progress in statistical modeling in many areas of applied statistics and machine learning [@Gelman:1995] and more recently has helped enable the training of machine learning models for simulation based inference techniques [cite Kyle SBI]. One important class of distributions that arises due to parameter or data constraints are truncated distributions [@Gelfand:1992; @Stanley:2025]. This method considers sampling a $d$-dimensional random variable $X \sim N(\mu,\Sigma)$ that is truncated with $m$ inequality constraints of the form 
-$$Q_j(X) = X^T A_j X + X^T f + c \geq 0\quad\quad j=1,\hdots,m$$
+Markov Chain Monte Carlo has been a foundational statistical technique that allows the approximation of intractable quantities from samples of complex, multivarate probability distriutions [@Robert:1999]. This has allowed for significant progress in statistical modeling in many areas of applied statistics and machine learning [@Gelman:1995] and more recently has helped enable the training of machine learning models for simulation based inference techniques [@Cranmer:2020; Brehmer:2022]. One important class of distributions that arises due to parameter or data constraints are truncated distributions [@Gelfand:1992; @Stanley:2025]. 
 
-<!-- `Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+Pakman and Paninski consider sampling a $d$-dimensional Gaussian $X \sim N(\mu,\Sigma)$ that is truncated with $m$ inequality constraints of the form 
+$$Q_j(X) \geq 0\quad\quad j=1,\hdots,m$$
+where $Q_j(X)$ is a product of linear and quadratic polynomials. As discussed by Pakman and Paninski, this type of distribution is critical to a vast array of Bayesian models including the probit and Tobit models [@Tobin:1958; @Albert:1993], the dichotomized Gaussian model [@Emrich:1991; Cox:2002], stochastic integrate-and-fire neural models [@Paninski:2003], Bayesian isotonic regression [@Neelon:2004], and the Bayesian bridge model [@Polson:2014].
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+Exact HMC is not the only method for sampling distributions of this family, two main alternatives include Hamiltonian Monte Carlo and Gibbs Sampling with the Hit and Run Algorithm [@Deely:1992]. HMC is a fast mixing algorithm that is robust to high numbers of dimensions. However, generally speaking it requires integrating equations of motion and using a Metropolis accept-reject step to account for numerical integration error. The numerical integration also comes with its own tunable hyperparameters that must be adjusted to balance exploration of the state space with a high acceptance probability [Hoffman:2024]. On the other hand, Gibbs is a simpler method with no hyperparameters that always accepts samples, however, it can be slow to mix, particularly when constraints impose high correlation between parameters. Since the Gaussian HMC trajectories are analytically computable Exact HMC enables the best of both options, the good mxing and high dimensional capabilities of HMC with the always accepting and no hyperparameter properties of the Gibbs sampler. See the original manuscript by Pakman and Paninski [@Pakman:2014] for a more detailed discussion of the differences between these methods. `tmg_hmc` is developed as a user friendly, well tested Python package so that anyone can leverage the benefits of exact HMC without needing to dwell on the technical details.
 
+In recent years, Exact HMC was used to implement physics-informed constraints such as positivity/ negativity constraints for fields governing CO2 flux in the WOMBAT v2.0 hierarchical flux-inversion framework for inferring changes to the global carbon cycle [@Bertolacci:2024]. And this package, tmg_hmc is used in ongoing research to sample spatial warping errors derived from 2d convex Gaussian processes which are approximated using a sequence of quadratic inequality constraints [Cite our stuff].
+
+<!-- 
 # Mathematics
 
 Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
