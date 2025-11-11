@@ -16,26 +16,11 @@ authors:
     orcid: 0000-0001-6875-945X
     # equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: 1
-#   - name: Author with no affiliation
-#     affiliation: 3
-#   - given-names: Ludwig
-#     dropping-particle: van
-#     surname: Beethoven
-#     affiliation: 3
 affiliations:
  - name: Carnegie Mellon University, United States
    index: 1
-#  - name: Institution Name, Country
-#    index: 2
-#  - name: Independent Researcher, Country
-#    index: 3
 date: 1 November 2025
 bibliography: paper.bib
-
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-# aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-# aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
@@ -56,7 +41,7 @@ In recent years, Exact HMC was used to implement physics-informed constraints su
 
 # Basic Usage
 
-`tmg-hmc` operates predominantly through the `TMGSampler` class where users specify the untruncated distribution, add constraints and then sample from the truncated distribution.
+`tmg-hmc` operates predominantly through the `TMGSampler` class where users specify the untruncated distribution, add constraints and then sample from the truncated distribution. All of the HMC trajectories and constraint hit time solutions will be handled automatically behind the scenes by the class internals.
 
 ```python
 import numpy as np
@@ -70,7 +55,8 @@ sampler = TMGSampler(mu, sigma)
 # Add constraints 
 # Second coordinate positive
 f_positivity = np.array([0., 1.]).reshape(-1,1)
-sampler.add_constraint(f=f_positivity)
+c_positivity = 0
+sampler.add_constraint(f=f_positivity, c=c_positivity)
 
 # Bounded outside of unit circle
 A_unit = np.eye(2)
@@ -78,7 +64,8 @@ c_unit = -1
 sampler.add_constraint(A=A_unit, c=c_unit)
 
 # Run the exact HMC sampling algorithm
-samples = sampler.sample(n_samples=1000, burn_in=100)
+x0 = np.array([2., 1.]).reshape(-1,1)
+samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 ```
 
 <!-- 
