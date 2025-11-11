@@ -1,5 +1,5 @@
 ---
-title: 'tmg_hmc: A Python package for Exact Hamiltonian Monte Carlo Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints'
+title: 'tmg_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints'
 tags:
   - Python
   - statistics
@@ -40,19 +40,12 @@ bibliography: paper.bib
 
 # Summary
 
-<!-- The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration). -->
-
-Markov Chain Monte Carlo is a cornerstone of statistical methods that allows us to approximate intractable quantities by sampling from complex multivariate probability distributions. One large class of important distributions are constrained distributions. We present {\verbatim tmg_hmc}: a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians presented in @Pakman:2014. This method leverages the high dimensional scalability and well mixing properties of Hamiltonian Monte Carlo while maintaining speed and simplicity since the Hamiltonian equations for a Gaussian distribution are analytically solvable. This means that the sampler always accepts and there are no tunable parameters. Our implementation complements (replaces? some other word?) the existing R implementation {\verbatim tmg} and matlab implementation {\verbatim tmg_hmc} both of which are no longer maintained (R also only works for deprecated version of R). Additionally, we expand our implementation by including sparse constraint handling and optional GPU acceleration for high dimensional problems such as truncated Gaussian processes. Finally, we accelerate the Quadratic constraint hit time calculation by using a speed optimized C++ implementation.
+Markov Chain Monte Carlo is a cornerstone of statistical methods that allows us to approximate intractable quantities by sampling from complex multivariate probability distributions. One large class of important distributions are constrained distributions. We present {\verbatim tmg_hmc}: a Python implementation of the Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians presented by Pakman and Paninski [@Pakman:2014]. This method leverages the high dimensional scalability and well mixing properties of Hamiltonian Monte Carlo while maintaining speed and simplicity since the Hamiltonian equations for a Gaussian distribution are analytically solvable. This means that the sampler always accepts and there are no tunable parameters. Our implementation replaces the existing R implementation {\verbatim tmg} and matlab implementation {\verbatim tmg_hmc} both of which are deprecated and no longer maintained. The R package was archived from CRAN in 2021 for this reason. Additionally, we expand our implementation by including sparse matrix operations for sparse constraint handling and optional GPU acceleration for high dimensional problems such as truncated Gaussian processes. Finally, we accelerate the Quadratic constraint hit time calculation by using a speed optimized C++ implementation.
  
 # Statement of need
+
+Markov Chain Monte Carlo has been a foundational statistical technique that allows the approximation of intractable quantities from samples of complex, multivarate probability distriutions [@Robert:1999]. This has allowed for significant progress in statistical modeling in many areas of applied statistics and machine learning [@Gelman:1995] and more recently has helped enable the training of machine learning models for simulation based inference techniques [cite Kyle SBI]. One important class of distributions that arises due to parameter or data constraints are truncated distributions [@Gelfand:1992; @Stanley:2025]. This method considers sampling a $d$-dimensional random variable $X \sim N(\mu,\Sigma)$ that is truncated with $m$ inequality constraints of the form 
+$$Q_j(X) = X^T A_j X + X^T f + c \geq 0\quad\quad j=1,\hdots,m$$
 
 <!-- `Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
 enables wrapping low-level languages (e.g., C) for speed without losing
@@ -118,5 +111,6 @@ Figure sizes can be customized by adding an optional second parameter:
 <!-- 
 We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
 Oh, and support from Kathryn Johnston during the genesis of this project. -->
+This implementation is based on the methodology presented by Pakman and Paninski [@Pakman:2014].
 
 # References
