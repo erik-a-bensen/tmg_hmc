@@ -1,4 +1,4 @@
-# tmg_hmc
+# tmg-hmc
 
 ![PyPI Version](https://img.shields.io/pypi/v/tmg_hmc)
 ![Python](https://img.shields.io/badge/python-3.10+-blue)
@@ -23,7 +23,7 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 - ✅ **Flexible constraints** - Supports linear and quadratic inequality constraints
 - ✅ **Efficient** - Uses optimized compiled C++ hit time calculation for efficient sampling
 - ✅ **GPU acceleration** - Optional PyTorch backend for large-scale problems
-<!-- - ✅ **Well-tested** - Comprehensive test suite ensuring correctness -->
+- ✅ **Well-tested** - Comprehensive test suite ensuring correctness
 
 ## Installation
 
@@ -39,10 +39,18 @@ pip install tmg-hmc[gpu]
 ```
 
 ### From Source
+Base package
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc 
 pip install .
+```
+
+Optional GPU support
+```bash
+git clone https://github.com/erik-a-bensen/tmg_hmc.git
+cd tmg_hmc 
+pip install .[gpu]
 ```
 
 **Requirements:**
@@ -128,20 +136,41 @@ samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 ```
 
 ## Examples
-TO BE IMPLEMENTED
-<!-- See the `examples/` directory for:
+See the `examples/` directory for:
 - Linear constraint examples
 - Quadratic constraint examples  
-- High-dimensional sampling
-- Comparison with approximate methods -->
+- Truncated Gaussian process examples
 
 ## Testing
 
-TO BE IMPLEMENTED
-<!-- Run the test suite:
+### Quick Start
+
+Install test dependencies:
 ```bash
-pytest tests/
-``` -->
+pip install -e .[test]
+```
+
+Run all tests:
+```bash
+pytest
+```
+
+### Running Specific Tests
+```bash
+pytest tests/test_sampler.py  # Run specific test file
+pytest -v                     # Verbose output
+pytest -m "not gpu"           # Skip GPU tests
+pytest -m "gpu"               # GPU tests only
+```
+
+### Test Organization
+
+- CPU tests run automatically in CI on Python 3.10, 3.11, 3.12, 3.13
+- GPU tests are automatically skipped if CUDA is not available
+- Tests run on Ubuntu, Windows, and macOS
+
+See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI status.
+
 
 ## Documentation
 

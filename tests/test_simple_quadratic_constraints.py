@@ -8,10 +8,10 @@ from tmg_hmc.constraints import SimpleQuadraticConstraint
 from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     import torch
-    gpu_available = torch.cuda.is_available()
+    GPU_AVAILABLE = torch.cuda.is_available()
 else:
     torch = None
-    gpu_available = False
+    GPU_AVAILABLE = False
 
 
 @st.composite
@@ -71,12 +71,10 @@ def test_simple_quadratic_constraint_value(input_lists, c):
     assert isinstance(val, float)
     assert np.isclose(val, expected_val)
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_value_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
     A, S, x = input_lists
     A = torch.tensor(A, device='cuda')
     S = torch.tensor(S, device='cuda')
@@ -100,12 +98,10 @@ def test_simple_quadratic_constraint_value_sparse(input_lists, c):
     assert isinstance(val, float)
     assert np.isclose(val, expected_val)
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_value_sparse_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     A = torch.tensor(A, device='cuda')
@@ -128,12 +124,10 @@ def test_simple_quadratic_constraint_normal(input_lists, c):
     assert isinstance(val, np.ndarray)
     assert np.isclose(val, expected_val).all()
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_normal_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
     A, S, x = input_lists
     A = torch.tensor(A, device='cuda')
     S = torch.tensor(S, device='cuda')
@@ -156,12 +150,10 @@ def test_simple_quadratic_constraint_normal_sparse(input_lists, c):
     assert isinstance(val, np.ndarray)
     assert np.isclose(val, expected_val).all()
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_normal_sparse_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     A = torch.tensor(A, device='cuda')
@@ -185,12 +177,11 @@ def test_simple_quadratic_constraint_hit_time(input_lists, c):
     if len(non_nan) > 0:
         assert np.all(non_nan > 0)
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_hit_time_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
+
     A, S, x, v = input_lists
     A = torch.tensor(A, device='cuda')
     S = torch.tensor(S, device='cuda')
@@ -216,12 +207,10 @@ def test_simple_quadratic_constraint_hit_time_sparse(input_lists, c):
     if len(non_nan) > 0:
         assert np.all(non_nan > 0)
 
+@pytest.mark.gpu
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(Asparse_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
 def test_simple_quadratic_constraint_hit_time_sparse_gpu(input_lists, c):
-    if not _TORCH_AVAILABLE:
-        pytest.skip("PyTorch is not available, skipping gpu test.")
-    elif not gpu_available:
-        pytest.skip("GPU is not available, skipping gpu test.")
     A, S, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     A = torch.tensor(A, device='cuda')
