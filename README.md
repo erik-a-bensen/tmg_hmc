@@ -1,7 +1,7 @@
 # tmg_hmc
 
 ![PyPI Version](https://img.shields.io/pypi/v/tmg_hmc)
-![Python Version](https://img.shields.io/pypi/pyversions/tmg-hmc)
+![Python](https://img.shields.io/badge/python-3.10+-blue)
 ![License](https://img.shields.io/pypi/l/tmg_hmc)
 [![Tests](https://github.com/erik-a-bensen/tmg_hmc/actions/workflows/run-tests.yml/badge.svg)](https://github.com/erik-a-bensen/tmg_hmc/actions/workflows/run-tests.yml)
 
