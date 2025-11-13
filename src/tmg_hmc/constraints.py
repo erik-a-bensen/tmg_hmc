@@ -325,9 +325,10 @@ class BaseQuadraticConstraint(Constraint):
         self.n_comps = len(rows)
         self.n = A.shape[0]
         self.A_orig = A
-        self.s_rows = np.vstack([S[i,:].reshape((1,self.n)) for i in rows]) # S[i,:] is a row vector
-        self.s_cols = np.hstack([S[:,j].reshape((self.n,1)) for j in cols]) # S[:,j] is a column vector
-        self.a_vals = vals.reshape((self.n_comps,1))
+        print(S)
+        self.s_rows = [S[i,:].reshape((1,self.n)) for i in rows] # S[i,:] is a row vector
+        self.s_cols = [S[:,j].reshape((self.n,1)) for j in cols] # S[:,j] is a column vector
+        self.a_vals = vals.reshape((self.n_comps,))
         self.value = self.value_sparse
         self.normal = self.normal_sparse
         self.compute_q = self.compute_q_sparse
@@ -375,8 +376,8 @@ class BaseQuadraticConstraint(Constraint):
         Array
             Result of A x computation
         """
-        dot_prods = [self.s_rows[i,:].reshape((1,self.n)) @ x for i in range(self.n_comps)]
-        return sum([self.a_vals[i]*dot_prods[i]*self.s_cols[:,i].reshape((self.n,1)) for i in range(self.n_comps)])
+        dot_prods = [self.s_rows[i].reshape((1,self.n)) @ x for i in range(self.n_comps)]
+        return sum([self.a_vals[i]*dot_prods[i]*self.s_cols[i].reshape((self.n,1)) for i in range(self.n_comps)])
 
     def x_dot_A_dot_x(self, x: Array) -> float:
         """

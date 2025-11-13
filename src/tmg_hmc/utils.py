@@ -101,7 +101,7 @@ def to_scalar(x: Array | float) -> float:
     if isinstance(x, float):
         return x
     elif isinstance(x, Tensor):
-        return x.item()
+        return x.cpu().item()
     elif len(x.shape) == 1:
         return x[0]
     return x[0,0]
@@ -120,7 +120,10 @@ def stable_acos(x: complex) -> complex:
     complex
         The arccosine of the input complex number.
     """
-    return -1j * cmath.log(x + 1j*cmath.sqrt(1 - x*x))
+    if np.abs(x) > 1:
+        return cmath.acos(x)
+    else:
+        return -1j * cmath.log(x + 1j*cmath.sqrt(1 - x*x))
 
 def arccos(x: float) -> float:
     """
