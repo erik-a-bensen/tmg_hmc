@@ -223,7 +223,3 @@ If you use this package in your research, please cite:
 }
 ```
 </details>
-
-## Acknowledgments
-
-This implementation is based on the exact HMC algorithm developed by Ari Pakman and Liam Paninski.
