@@ -116,7 +116,23 @@ class TMGSampler:
             raise ValueError("Sigma_half must be a square matrix")
         if not np.allclose(Sigma_half, Sigma_half.T):
             raise ValueError("Sigma_half must be symmetric")
-        self.Sigma_half = torch.tensor(Sigma_half).cuda() if self.gpu else Sigma_half
+        if self.gpu:
+            Sigma_half = torch.tensor(Sigma_half).cuda()
+            s, V = torch.linalg.eigh(Sigma_half)
+            all_positive = torch.all(s >= 0)
+        else:
+            s, V = np.linalg.eigh(Sigma_half)
+            all_positive = np.all(s >= 0)
+        if not all_positive:
+            min_eig = torch.min(s) if self.gpu else np.min(s)
+            if abs(min_eig) < 1e-10:
+                s -= 2*min_eig
+            else:
+                raise ValueError("Sigma_half must be positive semi-definite")
+        if self.gpu:
+            self.Sigma_half = V @ torch.diag(s) @ V.T
+        else:
+            self.Sigma_half = V @ np.diag(s) @ V.T
         
     def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
         """
@@ -185,7 +201,9 @@ class TMGSampler:
         else:
             raise ValueError("Must provide either A or f")
 
-        nonzero_A = A is not None
+        nonzero_A = False
+        if A is not None:
+            nonzero_A = torch.any(A != 0) if self.gpu else np.any(A != 0)
         nonzero_f = torch.any(f_new != 0) if self.gpu else np.any(f_new != 0)
         if self.gpu:
             c_new = c_new.item()
@@ -198,6 +216,8 @@ class TMGSampler:
             self.constraints.append(SimpleQuadraticConstraint(A, c_new, S, sparse))
         elif (not nonzero_A) and nonzero_f:
             self.constraints.append(LinearConstraint(f_new, c_new))
+        else:
+            raise ValueError("Constraint cannot be trivial (A and f both zero after transformation)")
             
     def _constraints_satisfied(self, x: Array) -> bool:
         """
@@ -274,9 +294,9 @@ class TMGSampler:
         inds = np.argsort(times)
         return times[inds], cs[inds]
     
-    def _binary_search(self, x: Array, xdot: Array, b1: float, b2: float, c: QuadraticConstraint) -> Tuple[Array, Array, float, bool]:
+    def _binary_search(self, x: Array, xdot: Array, b1: float, b2: float, c: Constraint) -> Tuple[Array, Array, float, bool]:
         """
-        Performs a binary search to find the precise hit time for a quadratic constraint
+        Performs a binary search to find the precise hit time for a constraint
         between bounds b1 and b2.
         
         Parameters
@@ -289,8 +309,8 @@ class TMGSampler:
             Lower bound of the search interval.
         b2 : float
             Upper bound of the search interval.
-        c : QuadraticConstraint
-            The quadratic constraint to check.
+        c : Constraint
+            The constraint to check.
 
         Returns
         -------

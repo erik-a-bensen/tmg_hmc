@@ -458,7 +458,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
             if isinstance(A, Tensor):
                 A = A.cuda()
         
-        return cls(A, c, S, sparse, d.get('compiled', True))
+        return cls(A, c, S, sparse)
     
     def value_(self, x: Array) -> float:
         """
