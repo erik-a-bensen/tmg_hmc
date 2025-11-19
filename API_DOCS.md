@@ -1,6 +1,6 @@
 # API Reference
 
-> **Package:** `tmg_hmc` v0.1.1
+> **Package:** `tmg_hmc` v0.1.2
 >
 > This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
 
