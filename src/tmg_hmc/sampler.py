@@ -1,8 +1,9 @@
 from __future__ import annotations
 import numpy as np
 from typing import Tuple
-from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
+from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
 from tmg_hmc.utils import Array, sparsify
+import warnings
 import pickle
 from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
@@ -133,10 +134,10 @@ class TMGSampler:
             self.Sigma_half = V @ torch.diag(s) @ V.T
         else:
             self.Sigma_half = V @ np.diag(s) @ V.T
-        
-    def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
+
+    def _build_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> Constraint:
         """
-        Adds a constraint to the sampler of the form:
+        Builds a constraint to the sampler of the form:
             x.T @ A @ x + f.T @ x + c >= 0
 
         Parameters
@@ -211,13 +212,91 @@ class TMGSampler:
             c_new = c_new[0,0]
         
         if nonzero_A and nonzero_f:
-            self.constraints.append(QuadraticConstraint(A, f_new, c_new, S, sparse, compiled))
+            return QuadraticConstraint(A, f_new, c_new, S, sparse, compiled)
         elif nonzero_A and (not nonzero_f):
-            self.constraints.append(SimpleQuadraticConstraint(A, c_new, S, sparse))
+            return SimpleQuadraticConstraint(A, c_new, S, sparse)
         elif (not nonzero_A) and nonzero_f:
-            self.constraints.append(LinearConstraint(f_new, c_new))
+            return LinearConstraint(f_new, c_new)
         else:
             raise ValueError("Constraint cannot be trivial (A and f both zero after transformation)")
+        
+    def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
+        """
+        Adds a constraint to the sampler of the form:
+            x.T @ A @ x + f.T @ x + c >= 0
+
+        Parameters
+        ----------
+        A : Array, optional
+            Quadratic term matrix, defaults to the zero matrix if not provided.
+        f : Array, optional
+            Linear term vector, defaults to the zero vector if not provided.
+        c : float, optional
+            Constant term. Default is 0.0.
+        sparse : bool, optional
+            Whether to store A and f in sparse format. Default is True.
+        compiled : bool, optional
+            Whether to use compiled constraint solutions for full quadratic constraints. Default is True.
+
+        Raises
+        ------
+        ValueError
+            If A is not symmetric when provided, or if neither A nor f is provided.
+
+        Notes
+        -----
+        The constraint is automatically transformed to account for the Gaussian's mean and covariance.
+        The transformed constraint becomes:
+            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
+        where y = S^{-1} (x - mu) and S = Sigma_half.
+        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+        """
+        constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+        self.constraints.append(constraint)
+
+    def add_product_constraint(self, *, Alist: list[Array], flist: list[Array], clist: list[float], sparse: bool = True, compiled: bool = True) -> None:
+        """
+        Adds a constraint to the sampler of the form:
+            x.T @ A @ x + f.T @ x + c >= 0
+
+        Parameters
+        ----------
+        Alist : list[Array]
+            Quadratic term matrices, defaults to the zero matrix if None is passed as an element
+        flist : list[Array]
+            Linear term vectors, defaults to the zero vector if None is passed as an element
+        clist : list[float]
+            Constant terms. Defaults to 0.0. if None is passed as an element
+        sparse : bool, optional
+            Whether to store A and f in sparse format. Default is True.
+        compiled : bool, optional
+            Whether to use compiled constraint solutions for full quadratic constraints. Default is True.
+
+        Raises
+        ------
+        ValueError
+            If A is not symmetric when provided, or if neither A nor f is provided.
+
+        Notes
+        -----
+        For product constraints, you must provide lists of each component (A, f, c).
+        The constraint is automatically transformed to account for the Gaussian's mean and covariance.
+        The transformed constraint becomes:
+            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
+        where y = S^{-1} (x - mu) and S = Sigma_half.
+        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+        """
+        assert len(Alist) == len(flist) == len(clist), "Alist, flist, and clist must have the same length"
+        nconstraints = len(Alist)
+        if nconstraints == 0:
+            raise ValueError("Must provide at least one constraint component")
+        elif nconstraints == 1:
+            warnings.warn("Only one constraint component provided to add_product_constraint, using add_constraint instead")
+            self.add_constraint(A=Alist[0], f=flist[0], c=clist[0], sparse=sparse, compiled=compiled)
+            return
+        cs = [self._build_constraint(A=Alist[i], f=flist[i], c=clist[i], sparse=sparse, compiled=compiled) for i in range(nconstraints)]
+        product_constraint = ProductConstraint(cs)
+        self.constraints.append(product_constraint)
             
     def _constraints_satisfied(self, x: Array) -> bool:
         """
