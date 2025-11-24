@@ -67,6 +67,40 @@ The transformed constraint becomes:<br>
 where y = S^{-1} (x - mu) and S = Sigma_half.<br>
 Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
 
+### `add_product_constraint`
+
+```python
+add_product_constraint(parameters: list[list[Array]] | list[dict[str, Array]], sparse: bool = True, compiled: bool = True) -> None
+```
+
+Adds a constraint to the sampler of the form:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x.T @ A @ x + f.T @ x + c >= 0
+
+Parameters<br>
+----------<br>
+parameters: list[list[Array]] | list[dict[str,Array]]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;List of constraint parameters as either lists [A, f, c] or dictionaries {'A': A, 'f': f, 'c': c}.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If list, each element must be of length 3 corresponding to A, f, and c.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If dictionary, missing keys 'A', 'f', and 'c' default to None, None, and 0.0 respectively.<br>
+sparse : bool, optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether to store A and f in sparse format. Default is True.<br>
+compiled : bool, optional<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether to use compiled constraint solutions for full quadratic constraints. Default is True.
+
+Raises<br>
+------<br>
+ValueError<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If A is not symmetric when provided, or if neither A nor f is provided.
+
+Notes<br>
+-----<br>
+For product constraints, you must provide lists of each component (A, f, c).<br>
+The constraint is automatically transformed to account for the Gaussian's mean and covariance.<br>
+The transformed constraint becomes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0<br>
+where y = S^{-1} (x - mu) and S = Sigma_half.<br>
+Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
 ### `load`
 
 ```python
@@ -664,6 +698,174 @@ Returns<br>
 -------<br>
 float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value of the constraint at x given by f^T x + c
+
+## `ProductConstraint` (class)
+
+```python
+ProductConstraint(constraints: Tuple[Constraint, ...])
+```
+
+Constraint that is the product of multiple linear or quadratic constraints
+
+**Constructor:**
+
+Parameters<br>
+----------<br>
+constraints : Tuple[Constraint, ...]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tuple of constraints to be combined
+
+### Methods
+
+### `compute_q`
+
+```python
+compute_q(a: Array, b: Array) -> Tuple[float, ...]
+```
+
+Compute the coefficients of the constraint equation along the trajectory defined by a and b
+
+### `deserialize`
+
+```python
+deserialize(d: dict, gpu: bool) -> Constraint
+```
+
+Deserialize the constraint from a dictionary
+
+Parameters<br>
+----------<br>
+d : dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Dictionary representation of the constraint<br>
+gpu : bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Whether to load tensors onto the GPU
+
+Returns<br>
+-------<br>
+Constraint<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Deserialized constraint object
+
+### `hit_time`
+
+```python
+hit_time(x: Array, xdot: Array) -> Array
+```
+
+Compute the hit time of the product constraint along the trajectory defined by x and xdot
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The position of the point in the HMC trajectory<br>
+xdot : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The velocity of the point in the HMC trajectory
+
+Returns<br>
+-------<br>
+Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Hit times of the product constraint along the trajectory
+
+### `is_satisfied`
+
+```python
+is_satisfied(x: Array) -> bool
+```
+
+Check if the constraint is satisfied at x
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Point to evaluate the constraint at<br>
+Returns<br>
+-------<br>
+bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;True if the constraint is satisfied, False otherwise
+
+### `is_zero`
+
+```python
+is_zero(x: Array) -> Tuple[bool, bool]
+```
+
+Check if the constraint is zero at x
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Point to evaluate the constraint at<br>
+Returns<br>
+-------<br>
+Tuple[bool, bool]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(is_strictly_zero, is_approximately_zero)
+
+### `normal`
+
+```python
+normal(x: Array) -> Array
+```
+
+Compute the normal vector of the product constraint at x
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Point to evaluate the normal vector at
+
+Returns<br>
+-------<br>
+Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Normal vector of the product constraint at x
+
+### `reflect`
+
+```python
+reflect(x: Array, xdot: Array) -> Array
+```
+
+Reflect the velocity xdot at the constraint surface defined by x
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Point on the constraint surface<br>
+xdot : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Velocity to be reflected
+
+Returns<br>
+-------<br>
+Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reflected velocity
+
+### `serialize`
+
+```python
+serialize() -> dict
+```
+
+Serialize the constraint to a dictionary
+
+Returns<br>
+-------<br>
+dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Dictionary representation of the constraint
+
+### `value`
+
+```python
+value(x: Array) -> float
+```
+
+Compute the value of the product constraint at x
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Point to evaluate the constraint at
+
+Returns<br>
+-------<br>
+float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value of the product constraint at x
 
 ## `QuadraticConstraint` (class)
 
@@ -1460,6 +1662,24 @@ Returns<br>
 -------<br>
 Tuple[Array, Array, Array]<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A tuple containing the row indices, column indices, and data values of the sparse matrix.
+
+## `is_nonzero_array`
+
+```python
+is_nonzero_array(x: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> <class 'bool'>
+```
+
+Checks if the input array is non-zero.
+
+Parameters<br>
+----------<br>
+x : Array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The input array to be checked.
+
+Returns<br>
+-------<br>
+bool<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;True if the array is non-zero, False otherwise.
 
 ## `sparsify`
 
