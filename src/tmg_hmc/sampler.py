@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from typing import Tuple
 from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
-from tmg_hmc.utils import Array, sparsify
+from tmg_hmc.utils import Array, sparsify, is_nonzero_array
 import warnings
 import pickle
 from tmg_hmc import _TORCH_AVAILABLE
@@ -204,8 +204,8 @@ class TMGSampler:
 
         nonzero_A = False
         if A is not None:
-            nonzero_A = torch.any(A != 0) if self.gpu else np.any(A != 0)
-        nonzero_f = torch.any(f_new != 0) if self.gpu else np.any(f_new != 0)
+            nonzero_A = is_nonzero_array(A)
+        nonzero_f = is_nonzero_array(f_new)
         if self.gpu:
             c_new = c_new.item()
         else:
@@ -254,19 +254,17 @@ class TMGSampler:
         constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
         self.constraints.append(constraint)
 
-    def add_product_constraint(self, *, Alist: list[Array], flist: list[Array], clist: list[float], sparse: bool = True, compiled: bool = True) -> None:
+    def add_product_constraint(self, *, parameters: list[list[Array]] | list[dict[str,Array]], sparse: bool = True, compiled: bool = True) -> None:
         """
         Adds a constraint to the sampler of the form:
             x.T @ A @ x + f.T @ x + c >= 0
 
         Parameters
         ----------
-        Alist : list[Array]
-            Quadratic term matrices, defaults to the zero matrix if None is passed as an element
-        flist : list[Array]
-            Linear term vectors, defaults to the zero vector if None is passed as an element
-        clist : list[float]
-            Constant terms. Defaults to 0.0. if None is passed as an element
+        parameters: list[list[Array]] | list[dict[str,Array]]
+            List of constraint parameters as either lists [A, f, c] or dictionaries {'A': A, 'f': f, 'c': c}.
+            If list, each element must be of length 3 corresponding to A, f, and c.
+            If dictionary, missing keys 'A', 'f', and 'c' default to None, None, and 0.0 respectively.
         sparse : bool, optional
             Whether to store A and f in sparse format. Default is True.
         compiled : bool, optional
@@ -286,15 +284,29 @@ class TMGSampler:
         where y = S^{-1} (x - mu) and S = Sigma_half.
         Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
         """
-        assert len(Alist) == len(flist) == len(clist), "Alist, flist, and clist must have the same length"
-        nconstraints = len(Alist)
-        if nconstraints == 0:
-            raise ValueError("Must provide at least one constraint component")
-        elif nconstraints == 1:
-            warnings.warn("Only one constraint component provided to add_product_constraint, using add_constraint instead")
-            self.add_constraint(A=Alist[0], f=flist[0], c=clist[0], sparse=sparse, compiled=compiled)
+        def parse_param(p):
+            if isinstance(p, dict):
+                A = p.get('A', None)
+                f = p.get('f', None)
+                c = p.get('c', 0.0)
+            else:
+                if len(p) != 3:
+                    raise ValueError("Each parameter list must be of length 3 corresponding to A, f, and c")
+                A, f, c = p
+            return A, f, c
+        if len(parameters) == 0:
+            raise ValueError("Must provide at least one constraint parameter set")
+        elif len(parameters) == 1:
+            warnings.warn("Only one constraint provided, adding as regular constraint instead of product constraint", UserWarning)
+            A, f, c = parse_param(parameters[0])
+            constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+            self.constraints.append(constraint)
             return
-        cs = [self._build_constraint(A=Alist[i], f=flist[i], c=clist[i], sparse=sparse, compiled=compiled) for i in range(nconstraints)]
+        cs = []
+        for p in parameters:
+            A, f, c = parse_param(p)
+            constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+            cs.append(constraint)
         product_constraint = ProductConstraint(cs)
         self.constraints.append(product_constraint)
             
