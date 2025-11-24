@@ -164,7 +164,80 @@ class Constraint(Protocol):
         else:
             raise ValueError(f"Unknown constraint type {d['type']}")
     
+
+class ProductConstraint(Constraint):
+    """
+    Constraint that is the product of multiple linear or quadratic constraints
+    """
+    def __init__(self, constraints: Tuple[Constraint, ...]) -> None:
+        """
+        Parameters
+        ----------
+        constraints : Tuple[Constraint, ...]
+            Tuple of constraints to be combined
+        """
+        self.constraints = constraints
+
+    def value(self, x: Array) -> float:
+        """
+        Compute the value of the product constraint at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the constraint at
+
+        Returns
+        -------
+        float
+            Value of the product constraint at x
+        """
+        val = 1.0
+        for constraint in self.constraints:
+            val *= constraint.value(x)
+        return val
     
+    def normal(self, x: Array) -> Array:
+        """
+        Compute the normal vector of the product constraint at x
+
+        Parameters
+        ----------
+        x : Array
+            Point to evaluate the normal vector at
+
+        Returns
+        -------
+        Array
+            Normal vector of the product constraint at x
+        """
+        vals = [c.value(x) for c in self.constraints]
+        normals = [c.normal(x) for c in self.constraints]
+        weighted = [normals[i] * np.prod(vals[:i] + vals[i+1:]) for i in range(len(self.constraints))]
+        return sum(weighted)
+    
+    def hit_time(self, x: Array, xdot: Array) -> Array:
+        """
+        Compute the hit time of the product constraint along the trajectory defined by x and xdot
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            Hit times of the product constraint along the trajectory
+        """
+        hit_times = []
+        for constraint in self.constraints:
+            ht = constraint.hit_time(x, xdot)
+            hit_times.append(ht)
+        return np.concatenate(hit_times)
+
 
 class LinearConstraint(Constraint):
     """

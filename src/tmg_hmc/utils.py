@@ -8,6 +8,7 @@ from tmg_hmc import _TORCH_AVAILABLE
 if _TORCH_AVAILABLE:
     from torch import Tensor, sparse_coo
 else:
+    torch = None
     class _TensorPlaceholder(object):
         pass
     Tensor = _TensorPlaceholder  # type: ignore
@@ -105,6 +106,29 @@ def to_scalar(x: Array | float) -> float:
     elif len(x.shape) == 1:
         return x[0]
     return x[0,0]
+
+def is_nonzero_array(x: Array) -> bool:
+    """
+    Checks if the input array is non-zero.
+
+    Parameters
+    ----------
+    x : Array
+        The input array to be checked.
+
+    Returns
+    -------
+    bool
+        True if the array is non-zero, False otherwise.
+    """
+    if isinstance(x, Tensor):
+        return not torch.all(x == 0).item()
+    elif isinstance(x, np.ndarray):
+        return not np.allclose(x, 0)
+    elif isinstance(x, coo_matrix):
+        return x.nnz > 0
+    else:
+        raise ValueError(f"Unknown type {type(x)}")
 
 def stable_acos(x: complex) -> complex:
     """

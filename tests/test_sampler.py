@@ -6,7 +6,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from tmg_hmc import TMGSampler, _TORCH_AVAILABLE
-from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
+from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
 if _TORCH_AVAILABLE:
     import torch
     gpu_available = torch.cuda.is_available()
@@ -87,43 +87,72 @@ def test_sigma_decomposition(pd_matrix):
 def test_invalid_constraint_errors(dim):
     sampler = TMGSampler(Sigma=np.eye(dim))
     with pytest.raises(ValueError):
-        sampler.add_constraint() # Neither A nor f provided
+        constraint = sampler._build_constraint() # Neither A nor f provided
     with pytest.raises(ValueError):
         A = np.zeros((dim, dim))
         f = np.zeros((dim, 1))
-        sampler.add_constraint(A=A, f=f)  # Both A and f zero
+        constraint = sampler._build_constraint(A=A, f=f)  # Both A and f zero
 
 @given(vector())
-def test_add_linear_constraint(f):
+def test_build_linear_constraint(f):
     assume(float(np.linalg.norm(f)) > 1e-8)  # Avoid zero vector
     sampler = TMGSampler(Sigma=np.eye(f.shape[0]))
-    sampler.add_constraint(f=f)
-    assert len(sampler.constraints) == 1
-    constraint = sampler.constraints[0]
+    constraint = sampler._build_constraint(f=f)
     assert isinstance(constraint, LinearConstraint)
     assert np.allclose(constraint.f, f)
 
 @given(symmetric_matrix())
-def test_add_simple_quadratic_constraint(A):
+def test_build_simple_quadratic_constraint(A):
     assume(not np.allclose(A, 0))  # Avoid zero matrix
     sampler = TMGSampler(Sigma=np.eye(A.shape[0]))
-    sampler.add_constraint(A=A, sparse=False)
-    assert len(sampler.constraints) == 1
-    constraint = sampler.constraints[0]
+    constraint = sampler._build_constraint(A=A, sparse=False)
     assert isinstance(constraint, SimpleQuadraticConstraint)
     assert np.allclose(constraint.A, A)
 
 @given(sym_mat_vec())
-def test_add_quadratic_constraint(data):
+def test_build_quadratic_constraint(data):
     A, f = data
     assume(not np.allclose(A, 0) and not np.allclose(f, 0))  # Avoid zero matrix and zero vector
     sampler = TMGSampler(Sigma=np.eye(A.shape[0]))
-    sampler.add_constraint(A=A, f=f, sparse=False)
-    assert len(sampler.constraints) == 1
-    constraint = sampler.constraints[0]
+    constraint = sampler._build_constraint(A=A, f=f, sparse=False)
     assert isinstance(constraint, QuadraticConstraint)
     assert np.allclose(constraint.A, A)
     assert np.allclose(constraint.b, f)
+
+def test_add_constraint():
+    f = np.ones(2).reshape(-1,1)
+    sampler = TMGSampler(Sigma=np.eye(2))
+    for i in range(10):
+        sampler.add_constraint(f=(i+1)*f)
+        assert len(sampler.constraints) == i+1
+
+def test_add_product_constraint_errors():
+    sampler = TMGSampler(Sigma=np.eye(2))
+    with pytest.raises(ValueError):
+        sampler.add_product_constraint(parameters=[np.eye(2), np.ones((2,1))])  # Invalid length
+    with pytest.raises(ValueError):
+        sampler.add_product_constraint(parameters=[])  # No constraint passed
+    with pytest.warns(UserWarning):
+        sampler.add_product_constraint(parameters=[{'A': np.eye(2)}])  # Single constraint passed
+
+def test_add_product_constraint_lists():
+    sampler = TMGSampler(Sigma=np.eye(2))
+    parameters = [[np.eye(2), np.ones((2,1)), 1.0],
+                  [2*np.eye(2), 2*np.ones((2,1)), 2.0]]
+    sampler.add_product_constraint(parameters=parameters)
+    assert len(sampler.constraints) == 1
+    constraint = sampler.constraints[0]
+    assert isinstance(constraint, ProductConstraint)
+
+def test_add_product_constraint_dicts():
+    sampler = TMGSampler(Sigma=np.eye(2))
+    parameters = [{'A': np.eye(2), 'f': np.ones((2,1)), 'c': 1.0},
+                  {'f': 2*np.ones((2,1)), 'c': 2.0},
+                  {'A': 3*np.eye(2)}]
+    sampler.add_product_constraint(parameters=parameters)
+    assert len(sampler.constraints) == 1
+    constraint = sampler.constraints[0]
+    assert isinstance(constraint, ProductConstraint)
 
 @given(st.integers(min_value=2, max_value=10))
 def test_unconstrained_sampling(dim):
@@ -171,3 +200,18 @@ def test_save_load():
             assert np.allclose(c1.A, c2.A)
             assert np.allclose(c1.b, c2.b)
     os.remove("test_sampler.pkl")
+
+def test_tight_constraints_end_to_end():
+    sampler = TMGSampler(Sigma=np.eye(2))
+    # x2 <= 1.1 x1 => x2 - 1.1 x1 >= 0
+    f = np.array([[1.1], [-1.0]])
+    sampler.add_constraint(f=f)
+    # x2 >= x1 => -x2 + x1 <= 0
+    f = np.array([[-1.0], [1.0]])
+    sampler.add_constraint(f=f)
+
+    x0 = np.array([[1.0], [1.05]])
+    samples = sampler.sample(x0=x0, n_samples=1000, burn_in=100)
+    satisfied = samples[:,1] <= 1.1 * samples[:,0]
+    satisfied &= samples[:,1] >= samples[:,0]
+    assert np.all(satisfied)
