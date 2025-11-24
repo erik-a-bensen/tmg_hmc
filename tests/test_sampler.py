@@ -200,3 +200,18 @@ def test_save_load():
             assert np.allclose(c1.A, c2.A)
             assert np.allclose(c1.b, c2.b)
     os.remove("test_sampler.pkl")
+
+def test_tight_constraints_end_to_end():
+    sampler = TMGSampler(Sigma=np.eye(2))
+    # x2 <= 1.1 x1 => x2 - 1.1 x1 >= 0
+    f = np.array([[1.1], [-1.0]])
+    sampler.add_constraint(f=f)
+    # x2 >= x1 => -x2 + x1 <= 0
+    f = np.array([[-1.0], [1.0]])
+    sampler.add_constraint(f=f)
+
+    x0 = np.array([[1.0], [1.05]])
+    samples = sampler.sample(x0=x0, n_samples=1000, burn_in=100)
+    satisfied = samples[:,1] <= 1.1 * samples[:,0]
+    satisfied &= samples[:,1] >= samples[:,0]
+    assert np.all(satisfied)
