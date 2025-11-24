@@ -27,7 +27,7 @@ See [Pakman & Paninski (2014)](https://doi.org/10.1080/10618600.2013.788448) for
 
 ## Installation
 
-### From PyPi
+### From PyPI
 Base package install
 ```bash
 pip install tmg-hmc
@@ -51,6 +51,13 @@ Optional GPU support
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc 
 pip install .[gpu]
+```
+
+Optional Testing Dependencies
+```bash
+git clone https://github.com/erik-a-bensen/tmg_hmc.git
+cd tmg_hmc 
+pip install .[test] # Or .[all] for test + gpu
 ```
 
 **Requirements:**
@@ -139,6 +146,7 @@ samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 See the `examples/` directory for:
 - Linear constraint examples
 - Quadratic constraint examples  
+- Product constraint examples
 - Truncated Gaussian process examples
 
 ## Testing
