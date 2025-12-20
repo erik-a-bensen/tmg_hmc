@@ -72,6 +72,6 @@ samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 # Acknowledgments
 
 This work was partially supported by the U.S. National Science Foundation under Grant
-No. DMS-2310632
+No. DMS-2310632. 
 
 # References
