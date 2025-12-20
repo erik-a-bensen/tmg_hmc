@@ -10,13 +10,13 @@ authors:
   - name: Erik A. Bensen
     orcid: 0000-0002-2294-1421
     corresponding: true 
-    affiliation: 1 
+    # affiliation: 1 
   - name: Mikael Kuusela
     orcid: 0000-0001-6875-945X
-    affiliation: 1
+    # affiliation: 1
 affiliations:
  - name: Department of Statistics and Data Science, Carnegie Mellon University
-   index: 1
+  #  index: 1
 date: 1 November 2025
 bibliography: paper.bib
 ---
