@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'paper.md'
+      - 'paper.bib'
   workflow_dispatch:
 
 jobs:
