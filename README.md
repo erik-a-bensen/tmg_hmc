@@ -90,9 +90,6 @@ sampler.add_constraint(f=f, c=0)
 # Sample 100 samples with 100 burn-in iterations
 x0 = np.array([[1], [1]])  # Initial point (must satisfy constraints)
 samples = sampler.sample(x0, n_samples=100, burn_in=100)
-
-print(f"Sample mean: {samples.mean(axis=1)}")
-print(f"Sample covariance:\n{np.cov(samples)}")
 ```
 
 ### Quadratically Constrained Gaussian
@@ -188,9 +185,6 @@ See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI s
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-<!-- ## Related Projects
-- [tmg](https://github.com/brunzema/truncated-mvn-sampler) - R package for approximate truncated Gaussian sampling -->
 
 ## License
 
