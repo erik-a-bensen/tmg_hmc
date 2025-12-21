@@ -5,11 +5,9 @@ from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticCon
 from tmg_hmc.utils import Array, sparsify, is_nonzero_array
 import warnings
 import pickle
-from tmg_hmc import _TORCH_AVAILABLE
-if _TORCH_AVAILABLE:
-    import torch 
-else:
-    torch = None
+from tmg_hmc import get_torch, get_tensor_type
+
+torch, Tensor = get_torch(), get_tensor_type()
 
 class TMGSampler:
     """

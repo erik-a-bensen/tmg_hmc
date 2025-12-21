@@ -3,19 +3,11 @@ import numpy as np
 from typing import Protocol, Tuple, Protocol
 from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements
 from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
-from tmg_hmc import _TORCH_AVAILABLE
-if _TORCH_AVAILABLE:
-    import torch
-    from torch import Tensor
-else:
-    torch = None
-    Tensor = type # type placeholder when torch is not available
-    class _TensorPlaceholder(object):
-        pass
-    Tensor = _TensorPlaceholder  # type: ignore
-    
+from tmg_hmc import get_torch, get_tensor_type
 from tmg_hmc.compiled import calc_all_solutions
 import warnings
+
+torch, Tensor = get_torch(), get_tensor_type()
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12

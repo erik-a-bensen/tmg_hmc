@@ -3,15 +3,9 @@ import cmath
 from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
 from typing import Tuple, TypeAlias
 import os
+from tmg_hmc import get_torch, get_tensor_type
 
-from tmg_hmc import _TORCH_AVAILABLE
-if _TORCH_AVAILABLE:
-    from torch import Tensor, sparse_coo
-else:
-    torch = None
-    class _TensorPlaceholder(object):
-        pass
-    Tensor = _TensorPlaceholder  # type: ignore
+torch, Tensor = get_torch(), get_tensor_type()
 
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
