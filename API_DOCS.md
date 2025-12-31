@@ -1594,25 +1594,9 @@ Returns<br>
 float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Result of x^T A x computation
 
-## `Tensor` (class)
-
-```python
-Tensor(args, kwargs)
-```
-
-Initialize self.  See help(type(self)) for accurate signature.
-
 ---
 
 # Utils Module
-
-## `Tensor` (class)
-
-```python
-Tensor(args, kwargs)
-```
-
-Initialize self.  See help(type(self)) for accurate signature.
 
 ## `arccos`
 
@@ -1648,7 +1632,7 @@ bool<br>
 ## `get_sparse_elements`
 
 ```python
-get_sparse_elements(A: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None]
+get_sparse_elements(A: numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> Tuple[numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None, numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None]
 ```
 
 Extracts the row, column, and data elements from a sparse matrix.
@@ -1666,7 +1650,7 @@ Tuple[Array, Array, Array]<br>
 ## `is_nonzero_array`
 
 ```python
-is_nonzero_array(x: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> <class 'bool'>
+is_nonzero_array(x: numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> <class 'bool'>
 ```
 
 Checks if the input array is non-zero.
@@ -1684,7 +1668,7 @@ bool<br>
 ## `sparsify`
 
 ```python
-sparsify(A: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None
+sparsify(A: numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None) -> numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None
 ```
 
 Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
@@ -1720,7 +1704,7 @@ complex<br>
 ## `to_scalar`
 
 ```python
-to_scalar(x: numpy.ndarray | tmg_hmc.utils._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
+to_scalar(x: numpy.ndarray | tmg_hmc._TensorPlaceholder | scipy.sparse._coo.coo_matrix | None | float) -> <class 'float'>
 ```
 
 Converts a scalar array or a float to a float.
