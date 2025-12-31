@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmg_hmc"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
 ]

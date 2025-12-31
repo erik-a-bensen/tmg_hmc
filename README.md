@@ -170,7 +170,7 @@ pytest -m "gpu"               # GPU tests only
 
 ### Test Organization
 
-- CPU tests run automatically in CI on Python 3.10, 3.11, 3.12, 3.13
+- CPU tests run automatically in CI on Python 3.10, 3.11, 3.12, 3.13, 3.14
 - GPU tests are automatically skipped if CUDA is not available
 - Tests run on Ubuntu, Windows, and macOS
 
