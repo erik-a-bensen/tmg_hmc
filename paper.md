@@ -61,7 +61,8 @@ The paper must provide evidence of either
 ## Realized Impact
 * Publications using the software
 * Evidence of external use and adoption
-* Integration with other research tools or workflows
+* Integration with other research tools or workflows status
+
 ## OR credible near-term significance
 * Benchmark results demonstrating improvements
 * Reproducible research materials showing capabilities
