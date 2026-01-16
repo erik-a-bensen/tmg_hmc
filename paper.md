@@ -27,6 +27,11 @@ Markov Chain Monte Carlo is a cornerstone of statistical methods that allows us 
  
 # Statement of need
 
+ ## Must Include
+ * Clearly states what problems the software is designed to solve
+ * Identifies who the target audience is
+ * Explains the software's relation to other work in the field
+
 Many statistical models of real-world phenomena require the computation of intractable integrals over complex, multivariate probability distributions. Markov Chain Monte Carlo is a foundational statistical method that allows can be used to approximate these quantities from samples [@Robert:1999]. This has allowed for significant progress in statistical modeling in many areas of applied statistics and machine learning [@Gelman:2013]. One important class of distributions that arises due to parameter or data constraints are truncated distributions [@Gelfand:1992; @Swiler:2020; @Stanley:2025]. 
 
 @Pakman:2014 consider sampling a $d$-dimensional Gaussian $X \sim N(\mu,\Sigma)$ that is truncated with $m$ inequality constraints of the form 
@@ -38,6 +43,37 @@ More recently, distributions of this form have been used for learning partially 
 ![Sample of a random transport map defined as the gradient of a 2d convex Gaussian process.\label{fig:tmap}](./resources/example_tmap.png){ width=50% }
 
 Exact HMC is not the only method for sampling distributions of this family. Two main alternatives include classical Hamiltonian Monte Carlo [@Duane:1987; @Neal:2011]and Gibbs sampling with the Hit-and-Run Algorithm [@Chen:1992]. HMC is a fast-mixing algorithm that is robust to high numbers of dimensions. However, generally speaking, it requires integrating equations of motion and using a Metropolis accept-reject step to account for numerical integration error. The numerical integration also comes with its own tunable hyperparameters that must be adjusted to balance exploration of the state space with a high acceptance probability [@Hoffman:2014]. On the other hand, Gibbs sampling is a simpler method with no hyperparameters that always accepts samples, however, it can be slow to mix, particularly when constraints impose high correlation between variables. Since the constrained Gaussian HMC trajectories are analytically computable Exact HMC enables the best of both options, the good mixing and high-dimensional capabilities of classical HMC with the always accepting and no hyperparameter properties of the Gibbs sampler. See the original manuscript @Pakman:2014 for a more detailed discussion of the differences between these methods. Some other alternative methods for sampling truncated multivariate Gaussian distributions include the R packages `VeccTMVN` [@Cao:2024] and `nntmvn` [@Cao:2025] which use Vecchia and nearest-neighbor approximations, respectively, to sample from a truncated Gaussian. However, these methods are both approximate and limited to sampling Gaussians with linear box constraints. `tmg-hmc` is developed as a flexible, user friendly and well tested Python package so that anyone can leverage the benefits of Exact HMC without needing to dwell on the technical details.
+
+# State of the Field
+Authors must describe how their software compares to other commonly-used packages in the research area. When related tools exist, authors must provide a clear ``build vs. contribute'' justification explaining
+* Their unique scholarly contribution
+* Why existing alternatives are insufficient for their research needs
+* What gap their software fills
+
+# Software Design
+The paper must include a section explaining the architectural choices made:
+* Trade-offs considered during design
+* The design/architecture chosen and why
+* Why these choices matter for the research application
+
+# Research Impact Statement
+The paper must provide evidence of either
+## Realized Impact
+* Publications using the software
+* Evidence of external use and adoption
+* Integration with other research tools or workflows
+## OR credible near-term significance
+* Benchmark results demonstrating improvements
+* Reproducible research materials showing capabilities
+* Community-readiness signals (e.g. requests from other groups, presentations at relevant venues)
+The evidence should be compelling and specific, not aspirational.
+
+# AI Usage Disclosure
+The paper must include a section that transparantly discloses any use of generative AI in:
+* Software creation or development
+* Documentation writing
+* Paper authoring
+If AI tools were used, authors should describe how theywere used and how the quality and correctness of AI-generated content was verified.
 
 # Basic Usage
 
