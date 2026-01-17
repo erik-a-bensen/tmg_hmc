@@ -70,11 +70,19 @@ The paper must provide evidence of either
 The evidence should be compelling and specific, not aspirational.
 
 # AI Usage Disclosure
-The paper must include a section that transparantly discloses any use of generative AI in:
+<!-- The paper must include a section that transparantly discloses any use of generative AI in:
 * Software creation or development
 * Documentation writing
 * Paper authoring
-If AI tools were used, authors should describe how theywere used and how the quality and correctness of AI-generated content was verified.
+If AI tools were used, authors should describe how they were used and how the quality and correctness of AI-generated content was verified. -->
+
+For software creation and development, we used Anthropic's Claude 3.7 Sonnet to optimize the C++ implementation of the Exact HMC hit times to quadratic constraints by removing redundant calculations. To do this, we initially solved the hit times analytically as shown in the Mathematica notebook located in resources/HMC_exact_soln.nb in the `tmg-hmc` repository. This resulted in a set of 8 solutions that were each a long mathematical expression taking over a page to write down. Then we used Mathematica's `CForm` command to convert the expression to C. We then told Claude that the 8 C functions represented a solution set and should follow a pattern and we asked Claude to parse the functions for a pattern and rewrite them without performing any reduntant calculations. 
+
+To test the correctness of the generated code we first tested that the code would compile. We then tested that the output hit-times were close to the original C hit times ouput from mathematica within a numerical tolerance for a small set of test cases. Finally, we ran the sampler and tested that the sampled points reached and did not exceed the quadratic constraint bounds which is only possible if the hit times are correct. This lead to about 15 iterations of testing the output code and asking Claude to refine its work because it wasn't correct. Then we finally got to a point where about half of the hit times appeared to be correct. This was an issue we had previously encountered with the Python implementation which was fixed by using complex arithmetic. So we manually made this change to the C++ implementation which fixed the final issue. Generative AI was not used for any other aspect of software creation and development.
+
+For documentation writing we used Claude to provide an initial scaffolding of the Readme.md file which was manually edited and adjusted to ensure correctness and consistency with the package. Additionally, we used Claude to create a custom generate docs workflow that would build the API_DOCS.md file from Python doscstrings. We used a custom workflow so that we could control how custom types used in type hints were displayed in the rendered documentation. We tested the correctness by running the GitHub workflow and adjusting as needed.
+
+Generative AI was not used for any aspect of paper writing.
 
 # Basic Usage
 
