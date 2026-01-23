@@ -41,6 +41,7 @@ where $Q_j(X)$ is a product of linear and quadratic polynomials. As discussed by
 More recently, distributions of this form have been used for learning partially censored Gaussian processes [@Cao:2025]. The Exact HMC algorithm was used to implement physics-informed constraints for fields governing CO2 flux in the WOMBAT v2.0 hierarchical flux-inversion framework for inferring changes to the global carbon cycle [@Bertolacci:2024]. Additionally, sampling constrained multivariate normals is relevant to a growing range of literature on constrained Gaussian processes [@Bachoc:2019; @Bachoc:2022; @Swiler:2020; @Agrell:2019; @DaVeiga:2012; @Lopez:2018; @Maatouk:2017]. 
 
 # Research Impact Statement
+
 <!-- The paper must provide evidence of either
 
 ## Realized Impact
@@ -55,15 +56,14 @@ More recently, distributions of this form have been used for learning partially 
 The evidence should be compelling and specific, not aspirational. -->
 
 
-In our ongoing research, we are using `tmg-hmc` to sample random transport maps given by the gradient of 2d convex Gaussian processes. We do this by approximating the convex GP by imposing quadratic convex inequality constraints on a discrete spatial grid. \autoref{fig:tmap} shows an example of such a transport map sampled using `tmg-hmc`.
+In our ongoing research, we are using `tmg-hmc` to sample random transport maps given by the gradient of 2d convex Gaussian processes. We do this by approximating the convex GP by imposing quadratic convex inequality constraints on a discrete spatial grid. \autoref{fig:tmap} shows an example of such a transport map sampled using `tmg-hmc`. For context, one constraint is positivity for $~400$ coordinates. If we were to naively rejection sample with only these positivity constraints the acceptance probability would be $~1/2^{400}$ which is completely infeasible. We also tested sampling by using a linearly constrained region as a proposal distribution and then rejection sampling to get to the convexity constraint, in this case we get an acceptance propability of $~1/10^4$ which is improved over naive rejection sampling, but still infeasible for most applications. `tmg-hmc` allows us to sample directly from the convex Gaussian process distribution and we are able to sample several thousand samples per second.
 
 ![Sample of a random transport map defined as the gradient of a 2d convex Gaussian process.\label{fig:tmap}](./resources/example_tmap.png){ width=50% }
 
-This work, including our use of `tmg-hmc` was presented at two venues in 2025, as a talk in the Inference Without Exact Likelihoods topics session at the Joint Statistical Meeting (JSM2025) in August and as a poster for the Simulation-based Inference Workshop presented by the Statistical Methods for the Physical Sciences Center at Carnegie Mellon University in October. Additionally, this work is set to be published later this year.
-
-QUESTION: Mikael mentioned that several people have reached out about this software. Is it worth talking about that?
+Preliminary work, including our use of `tmg-hmc` was presented at two venues and has drawn considerable interest from the community. Additionally this work is set to be submitted later this year.
 
 # State of the Field
+
 <!-- Authors must describe how their software compares to other commonly-used packages in the research area. When related tools exist, authors must provide a clear ``build vs. contribute'' justification explaining
 * Their unique scholarly contribution
 * Why existing alternatives are insufficient for their research needs
