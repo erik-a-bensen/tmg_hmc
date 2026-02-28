@@ -16,7 +16,7 @@ authors = [
 ]
 description = "This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
