@@ -55,7 +55,7 @@ test-requires = ["numpy", "scipy"]
 test-command = """python -c "import tmg_hmc; print('tmg_hmc imported successfully')" """
 
 [tool.cibuildwheel.linux]
-manylinux-x86_64-image = "manylinux2014"
+manylinux-x86_64-image = "manylinux_2_28"
 before-build = "yum install -y gcc-c++ make"
 
 [tool.cibuildwheel.macos]
