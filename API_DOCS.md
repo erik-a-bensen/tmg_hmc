@@ -1,6 +1,6 @@
 # API Reference
 
-> **Package:** `tmg_hmc` v0.1.3
+> **Package:** `tmg_hmc` v1.0.1
 >
 > This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints.
 
@@ -1729,7 +1729,7 @@ float<br>
 calc_all_solutions(...)
 ```
 
-calc_all_solutions(arg0: typing.SupportsFloat, arg1: typing.SupportsFloat, arg2: typing.SupportsFloat, arg3: typing.SupportsFloat, arg4: typing.SupportsFloat) -> numpy.typing.NDArray[numpy.float64]
+calc_all_solutions(arg0: typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsFloat | typing.SupportsIndex) -> numpy.typing.NDArray[numpy.float64]
 
 
 calc_all_solutions(q1: float, q2: float, q3: float, q4: float, q5: float) -> np.ndarray
@@ -1773,7 +1773,7 @@ Memory management is handled automatically.
 soln1(...)
 ```
 
-soln1(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln1(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln1(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1806,7 +1806,7 @@ This function is maintained for reference and validation purposes.
 soln2(...)
 ```
 
-soln2(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln2(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln2(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1824,7 +1824,7 @@ See 'soln1' for details.
 soln3(...)
 ```
 
-soln3(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln3(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln3(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1842,7 +1842,7 @@ See 'soln1' for details.
 soln4(...)
 ```
 
-soln4(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln4(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln4(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1860,7 +1860,7 @@ See 'soln1' for details.
 soln5(...)
 ```
 
-soln5(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln5(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln5(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1878,7 +1878,7 @@ See 'soln1' for details.
 soln6(...)
 ```
 
-soln6(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln6(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln6(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1896,7 +1896,7 @@ See 'soln1' for details.
 soln7(...)
 ```
 
-soln7(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln7(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln7(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
@@ -1914,7 +1914,7 @@ See 'soln1' for details.
 soln8(...)
 ```
 
-soln8(arg0: complex, arg1: complex, arg2: complex, arg3: complex, arg4: complex) -> float
+soln8(arg0: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg1: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg2: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg3: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex, arg4: typing.SupportsComplex | typing.SupportsFloat | typing.SupportsIndex) -> float
 
 
 soln8(q1: float, q2: float, q3: float, q4: float, q5: float) -> float
