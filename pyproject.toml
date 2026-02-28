@@ -8,9 +8,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tmg_hmc"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Erik A. Bensen", email="ebensen@andrew.cmu.edu" },
+  { name="Mikael Kuusela", email="mkuusela@andrew.cmu.edu" },
 ]
 description = "This package implements exact HMC sampling for truncated multivariate gaussians with quadratic constraints"
 readme = "README.md"
