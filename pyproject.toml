@@ -42,6 +42,7 @@ test = [
     "pytest-cov",
     "hypothesis>=6.100",
     "ruff",
+    "pre-commit",
 ]
 
 dev = ["tmg_hmc[gpu,test,examples]"]

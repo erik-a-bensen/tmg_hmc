@@ -29,6 +29,19 @@ Install in editable mode with all development dependencies:
 pip install -e .[dev]
 ```
 
+Install the pre-commit hooks:
+```bash
+pre-commit install
+```
+
+This will automatically run linting and formatting checks on every commit.
+
+If you plan to modify the C++ extension files, also install `cppcheck` and `clang-format` via your system package manager:
+- **Arch**: `sudo pacman -S cppcheck clang`
+- **macOS**: `brew install cppcheck clang-format`
+- **Ubuntu/Debian**: `sudo apt install cppcheck clang-format`
+- **Windows**: `choco install cppcheck llvm` or `winget install Cppcheck.Cppcheck` and `winget install LLVM.LLVM`
+
 ### Making Changes
 
 1. Create a branch from `main`:
@@ -42,36 +55,27 @@ pip install -e .[dev]
    pytest
    pytest -m "not gpu"  # if you don't have a GPU
    ```
-5. Check and format your code with ruff:
-   ```bash
-   ruff check src/
-   ruff format src/
-   ```
-6. Push your branch and open a pull request against `main`
+5. Push your branch and open a pull request against `main`
 
 ### Pull Request Guidelines
 
 - Keep PRs focused — one feature or fix per PR
 - Include a clear description of what changed and why
-- All CI checks (tests + ruff) must pass before merging
-- For bug fixes, if possible, add a test that would have caught the bug
+- All CI checks (tests + linting) must pass before merging
+- For bug fixes, consider adding a test that would have caught the bug
 
 ## Code Style
 
-This project uses [ruff](https://docs.astral.sh/ruff/) for linting and formatting. It is included in the `dev` dependencies.
+This project uses [ruff](https://docs.astral.sh/ruff/) for Python linting and formatting, [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for C++ formatting, and [cppcheck](https://cppcheck.sourceforge.io/) for C++ static analysis. All are run automatically via pre-commit.
 
-To check for issues:
+To run all checks manually:
 ```bash
-ruff check src/
+pre-commit run --all-files
 ```
 
-To auto-fix most issues:
+To run ruff directly:
 ```bash
 ruff check --fix src/
-```
-
-To format code:
-```bash
 ruff format src/
 ```
 

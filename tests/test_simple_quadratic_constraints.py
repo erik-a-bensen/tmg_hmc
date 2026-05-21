@@ -225,7 +225,6 @@ def test_simple_quadratic_constraint_hit_time(input_lists, c):
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_hit_time_gpu(input_lists, c):
-
     A, S, x, v = input_lists
     A = torch.tensor(A, device="cuda")
     S = torch.tensor(S, device="cuda")
