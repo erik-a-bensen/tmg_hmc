@@ -2,7 +2,9 @@ from __future__ import annotations
 import numpy as np
 from typing import Tuple
 from tmg_hmc.utils import Array, to_scalar
+from tmg_hmc.gpu_utils import _TORCH_AVAILABLE
 from tmg_hmc.constraints.base import Constraint, pis, eps
+import warnings
 
 
 @Constraint.register
@@ -22,6 +24,33 @@ class LinearConstraint(Constraint):
         """
         self.f = f
         self.c = c
+
+    @classmethod
+    def build_from_dict(cls, d: dict, gpu: bool) -> LinearConstraint:
+        """
+        Build a LinearConstraint from a dictionary representation
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary representation of the constraint
+        gpu : bool
+            Whether to load tensors onto the GPU
+
+        Returns
+        -------
+        Linear Constraint
+            The constructed constraint
+        """
+        if gpu and not _TORCH_AVAILABLE:
+            gpu = False
+            warnings.warn(
+                "GPU requested but PyTorch is not available. Loading on CPU instead."
+            )
+        f = d["f"]
+        c = d["c"]
+
+        return cls(f, c)
 
     def value(self, x: Array) -> float:
         """

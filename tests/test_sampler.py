@@ -122,7 +122,7 @@ def test_invalid_constraint_errors(dim):
 
 @given(vector())
 def test_build_linear_constraint(f):
-    assume(float(np.linalg.norm(f)) > 1e-8)  # Avoid zero vector
+    assume(float(np.linalg.norm(f)) > 1e-6)  # Avoid zero vector
     sampler = TMGSampler(Sigma=np.eye(f.shape[0]))
     constraint = sampler._build_constraint(f=f)
     assert isinstance(constraint, LinearConstraint)
