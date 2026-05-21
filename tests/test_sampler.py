@@ -3,7 +3,6 @@ from hypothesis.extra.numpy import arrays
 import pytest
 import os
 import numpy as np
-import scipy.sparse as sp
 
 from tmg_hmc import TMGSampler
 from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
@@ -52,7 +51,7 @@ def sym_mat_vec(draw, min_size=2, max_size=10):
 @given(positive_definite_matrices())
 def test_sampler_initialization_errors(pd_matrix):
     with pytest.raises(ValueError):
-        TMGSampler() 
+        TMGSampler()
     TMGSampler(Sigma=pd_matrix)  # Should not raise
     TMGSampler(Sigma_half=pd_matrix)  # Should not raise
 
@@ -60,7 +59,7 @@ def test_sampler_initialization_errors(pd_matrix):
         TMGSampler(Sigma=pd_matrix[:-1, :])  # Invalid shape
     with pytest.raises(ValueError):
         TMGSampler(Sigma_half=pd_matrix[:-1, :])  # Invalid shape
-    
+
     asym_matrix = pd_matrix.copy()
     asym_matrix[0,1] += 1e-3  # Make it asymmetric
     with pytest.raises(ValueError):
@@ -86,11 +85,11 @@ def test_sigma_decomposition(pd_matrix):
 def test_invalid_constraint_errors(dim):
     sampler = TMGSampler(Sigma=np.eye(dim))
     with pytest.raises(ValueError):
-        constraint = sampler._build_constraint() # Neither A nor f provided
+        _ = sampler._build_constraint() # Neither A nor f provided
     with pytest.raises(ValueError):
         A = np.zeros((dim, dim))
         f = np.zeros((dim, 1))
-        constraint = sampler._build_constraint(A=A, f=f)  # Both A and f zero
+        _ = sampler._build_constraint(A=A, f=f)  # Both A and f zero
 
 @given(vector())
 def test_build_linear_constraint(f):
@@ -181,7 +180,7 @@ def test_save_load():
     sampler = TMGSampler(Sigma=np.eye(3))
     sampler.add_constraint(f=np.array([[1.0], [0.0], [0.0]]), sparse=False)
     sampler.add_constraint(A=np.array([[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]]), sparse=False)
-    sampler.add_constraint(A=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]), 
+    sampler.add_constraint(A=np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
                            f=np.array([[1.0], [1.0], [1.0]]), sparse=False)
 
     sampler.save("test_sampler.pkl")
@@ -190,7 +189,7 @@ def test_save_load():
     assert np.allclose(loaded_sampler.Sigma_half, sampler.Sigma_half)
     assert len(loaded_sampler.constraints) == len(sampler.constraints)
     for c1, c2 in zip(loaded_sampler.constraints, sampler.constraints):
-        assert type(c1) == type(c2)
+        assert type(c1) is type(c2)
         if isinstance(c1, LinearConstraint):
             assert np.allclose(c1.f, c2.f)
         elif isinstance(c1, SimpleQuadraticConstraint):

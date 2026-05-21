@@ -15,7 +15,7 @@ else:
 @st.composite
 def A_S_vecs(draw, num_vecs=2):
     # Draw a random length for all lists
-    length = draw(st.integers(min_value=1, max_value=10)) 
+    length = draw(st.integers(min_value=1, max_value=10))
 
     # Generate matrix of shape length x length
     Amatrix = draw(arrays(dtype=np.float64, shape=(length, length), elements=st.floats(min_value=-1e6, max_value=1e6)))
@@ -31,13 +31,13 @@ def A_S_vecs(draw, num_vecs=2):
         draw(arrays(dtype=np.float64, shape=(length, 1), elements=st.floats(min_value=-1e6, max_value=1e6)))
         for _ in range(num_vecs)
     ]
-    
+
     return (Amatrix, Smatrix) + tuple(vectors)
 
 @st.composite
 def Asparse_S_vecs(draw, num_vecs=2):
     # Draw a random length for all lists
-    length = draw(st.integers(min_value=2, max_value=10)) 
+    length = draw(st.integers(min_value=2, max_value=10))
 
     # Generate sparse matrix of shape length x length
     density = draw(st.floats(min_value=0.01, max_value=0.5))
@@ -55,7 +55,7 @@ def Asparse_S_vecs(draw, num_vecs=2):
         draw(arrays(dtype=np.float64, shape=(length, 1), elements=st.floats(min_value=-1e6, max_value=1e6)))
         for _ in range(num_vecs)
     ]
-    
+
     return (Amatrix, Smatrix) + tuple(vectors)
 
 @given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))

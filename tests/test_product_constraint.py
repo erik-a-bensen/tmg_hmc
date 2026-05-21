@@ -1,8 +1,7 @@
 from hypothesis import given, strategies as st
-import pytest
 import numpy as np
 
-from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
+from tmg_hmc.constraints import LinearConstraint, ProductConstraint
 from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
 if _TORCH_AVAILABLE:
     GPU_AVAILABLE = torch.cuda.is_available()
@@ -52,12 +51,12 @@ def test_hit_time_product_constraint(x, v):
     constraint1 = LinearConstraint(f=np.array([[1.0], [0.0]]), c=-1.0)  # x[0] - 1 >= 0
     constraint2 = LinearConstraint(f=np.array([[0.0], [1.0]]), c=-2.0)  # x[1] - 2 >= 0
     product_constraint = ProductConstraint([constraint1, constraint2])
-    
+
     t1s = constraint1.hit_time(x, v)
     t2s = constraint2.hit_time(x, v)
-    
+
     prodts = product_constraint.hit_time(x, v)
-    
+
     expected = set(t1s.tolist() + t2s.tolist())
     result = set(prodts.tolist())
     assert equal_sets(expected, result)

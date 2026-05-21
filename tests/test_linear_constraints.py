@@ -2,7 +2,7 @@ from hypothesis import given, strategies as st
 import pytest
 import numpy as np
 
-from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
+from tmg_hmc.constraints import LinearConstraint
 from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
 if _TORCH_AVAILABLE:
     GPU_AVAILABLE = torch.cuda.is_available()
@@ -13,14 +13,14 @@ else:
 @st.composite
 def same_len_lists(draw, num_lists=2):
     # Draw a random length for all lists
-    length = draw(st.integers(min_value=1, max_value=10)) 
+    length = draw(st.integers(min_value=1, max_value=10))
 
     # Generate the specified number of lists with the drawn length
     lists = [
         draw(st.lists(st.floats(min_value=-1e6, max_value=1e6), min_size=length, max_size=length))
         for _ in range(num_lists)
     ]
-    
+
     return tuple(lists)
 
 @given(same_len_lists(), st.floats(min_value=-1e6, max_value=1e6))
