@@ -3,24 +3,28 @@ import numpy as np
 
 from tmg_hmc.constraints import LinearConstraint, ProductConstraint
 from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
+
 if _TORCH_AVAILABLE:
     GPU_AVAILABLE = torch.cuda.is_available()
 else:
     GPU_AVAILABLE = False
 
+
 def equal_sets(a, b):
-        if len(a) != len(b):
+    if len(a) != len(b):
+        return False
+    for item in a:
+        if not any(np.isclose(item, other, atol=1e-7, equal_nan=True) for other in b):
             return False
-        for item in a:
-            if not any(np.isclose(item, other, atol=1e-7, equal_nan=True) for other in b):
-                return False
-        return True
+    return True
+
 
 def test_initialize_product_constraint():
-    constraint = LinearConstraint(f=np.array([[1.0], [2.0]]),c=0.0)
+    constraint = LinearConstraint(f=np.array([[1.0], [2.0]]), c=0.0)
     constraint_list = [constraint] * 3
     product_constraint = ProductConstraint(constraint_list)
     assert len(product_constraint.constraints) == 3
+
 
 @given(st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2))
 def test_value_product_constraint(x):
@@ -31,6 +35,7 @@ def test_value_product_constraint(x):
     expected_value = (x[0] - 1.0) * (x[1] - 2.0)
     result = product_constraint.value(x)
     assert np.isclose(result, expected_value, atol=1e-7)
+
 
 @given(st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2))
 def test_normal_product_constraint(x):
@@ -44,7 +49,11 @@ def test_normal_product_constraint(x):
     result_normal = product_constraint.normal(x)
     assert np.allclose(result_normal, expected_normal, atol=1e-7)
 
-@given(st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2), st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2))
+
+@given(
+    st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2),
+    st.lists(st.floats(-1e6, 1e6), min_size=2, max_size=2),
+)
 def test_hit_time_product_constraint(x, v):
     x = np.array(x).reshape(-1, 1)
     v = np.array(v).reshape(-1, 1)
