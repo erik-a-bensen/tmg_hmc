@@ -41,9 +41,17 @@ test = [
     "pytest>=7.0",
     "pytest-cov",
     "hypothesis>=6.100",
+    "ruff",
 ]
 
 dev = ["tmg_hmc[gpu,test,examples]"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]  # line too long — ruff format handles this
 
 [project.urls]
 Homepage = "https://github.com/erik-a-bensen/tmg_hmc"
