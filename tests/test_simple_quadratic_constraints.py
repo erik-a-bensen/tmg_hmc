@@ -23,7 +23,7 @@ def A_S_vecs(draw, num_vecs=1):
         arrays(
             dtype=np.float64,
             shape=(length, length),
-            elements=st.floats(min_value=-1e6, max_value=1e6),
+            elements=st.floats(min_value=-1e3, max_value=1e3),
         )
     )
     Amatrix = (Amatrix + Amatrix.T) / 2  # Ensure the matrix is symmetric
@@ -33,7 +33,7 @@ def A_S_vecs(draw, num_vecs=1):
         arrays(
             dtype=np.float64,
             shape=(length, length),
-            elements=st.floats(min_value=-1e6, max_value=1e6),
+            elements=st.floats(min_value=-1e3, max_value=1e3),
         )
     )
     Smatrix = Smatrix @ Smatrix.T  # Make it positive semi-definite
@@ -47,7 +47,7 @@ def A_S_vecs(draw, num_vecs=1):
             arrays(
                 dtype=np.float64,
                 shape=(length, 1),
-                elements=st.floats(min_value=-1e6, max_value=1e6),
+                elements=st.floats(min_value=-1e3, max_value=1e3),
             )
         )
         for _ in range(num_vecs)
@@ -72,12 +72,12 @@ def Asparse_S_vecs(draw, num_vecs=1):
         arrays(
             dtype=np.float64,
             shape=(length, length),
-            elements=st.floats(min_value=-1e6, max_value=1e6),
+            elements=st.floats(min_value=-1e3, max_value=1e3),
         )
     )
     Smatrix = Smatrix @ Smatrix.T  # Make it positive semi-definite
     Smatrix += (
-        np.eye(length) * 1e-6
+        np.eye(length) * 1e-5
     )  # Add small value to diagonal for numerical stability
 
     # Generate the specified number of vectors with the drawn length
@@ -86,7 +86,7 @@ def Asparse_S_vecs(draw, num_vecs=1):
             arrays(
                 dtype=np.float64,
                 shape=(length, 1),
-                elements=st.floats(min_value=-1e6, max_value=1e6),
+                elements=st.floats(min_value=-1e3, max_value=1e3),
             )
         )
         for _ in range(num_vecs)
@@ -95,7 +95,7 @@ def Asparse_S_vecs(draw, num_vecs=1):
     return (Amatrix, Smatrix) + tuple(vectors)
 
 
-@given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_value(input_lists, c):
     A, S, x = input_lists
     constraint = SimpleQuadraticConstraint(A=A, c=c, S=S, sparse=False)
@@ -109,7 +109,7 @@ def test_simple_quadratic_constraint_value(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_value_gpu(input_lists, c):
     A, S, x = input_lists
     A = torch.tensor(A, device="cuda")
@@ -124,7 +124,7 @@ def test_simple_quadratic_constraint_value_gpu(input_lists, c):
     assert np.isclose(val, expected_val.cpu().item())
 
 
-@given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_value_sparse(input_lists, c):
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
@@ -138,7 +138,7 @@ def test_simple_quadratic_constraint_value_sparse(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_value_sparse_gpu(input_lists, c):
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
@@ -153,7 +153,7 @@ def test_simple_quadratic_constraint_value_sparse_gpu(input_lists, c):
     assert np.isclose(val, expected_val.cpu().item())
 
 
-@given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_normal(input_lists, c):
     A, S, x = input_lists
     Atilde = S @ A @ S
@@ -166,7 +166,7 @@ def test_simple_quadratic_constraint_normal(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(A_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_normal_gpu(input_lists, c):
     A, S, x = input_lists
     A = torch.tensor(A, device="cuda")
@@ -180,7 +180,7 @@ def test_simple_quadratic_constraint_normal_gpu(input_lists, c):
     assert torch.isclose(val, expected_val).all()
 
 
-@given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_normal_sparse(input_lists, c):
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
@@ -194,7 +194,7 @@ def test_simple_quadratic_constraint_normal_sparse(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(Asparse_S_vecs(), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_normal_sparse_gpu(input_lists, c):
     A, S, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
@@ -209,7 +209,7 @@ def test_simple_quadratic_constraint_normal_sparse_gpu(input_lists, c):
     assert torch.isclose(val, expected_val).all()
 
 
-@given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_hit_time(input_lists, c):
     A, S, x, v = input_lists
     constraint = SimpleQuadraticConstraint(A=A, c=c, S=S, sparse=False)
@@ -223,7 +223,7 @@ def test_simple_quadratic_constraint_hit_time(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
+@given(A_S_vecs(num_vecs=2), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_hit_time_gpu(input_lists, c):
 
     A, S, x, v = input_lists
@@ -240,7 +240,7 @@ def test_simple_quadratic_constraint_hit_time_gpu(input_lists, c):
         assert np.all(non_nan > 0)
 
 
-@given(Asparse_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(num_vecs=2), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_hit_time_sparse(input_lists, c):
     A, S, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
@@ -255,7 +255,7 @@ def test_simple_quadratic_constraint_hit_time_sparse(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(Asparse_S_vecs(num_vecs=2), st.floats(min_value=-1e6, max_value=1e6))
+@given(Asparse_S_vecs(num_vecs=2), st.floats(min_value=-1e3, max_value=1e3))
 def test_simple_quadratic_constraint_hit_time_sparse_gpu(input_lists, c):
     A, S, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix

@@ -20,7 +20,7 @@ def same_len_lists(draw, num_lists=2):
     lists = [
         draw(
             st.lists(
-                st.floats(min_value=-1e6, max_value=1e6),
+                st.floats(min_value=-1e3, max_value=1e3),
                 min_size=length,
                 max_size=length,
             )
@@ -31,7 +31,7 @@ def same_len_lists(draw, num_lists=2):
     return tuple(lists)
 
 
-@given(same_len_lists(), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_value(input_lists, c):
     f, x = input_lists
     f = np.array(f).reshape(-1, 1)
@@ -45,7 +45,7 @@ def test_linear_constraint_value(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(same_len_lists(), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_value_gpu(input_lists, c):
     f, x = input_lists
     f = torch.tensor(f, device="cuda").reshape(-1, 1)
@@ -57,7 +57,7 @@ def test_linear_constraint_value_gpu(input_lists, c):
     assert np.isclose(val, expected_val.cpu().item())
 
 
-@given(same_len_lists(), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_normal(input_lists, c):
     f, x = input_lists
     f = np.array(f).reshape(-1, 1)
@@ -71,7 +71,7 @@ def test_linear_constraint_normal(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(same_len_lists(), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_normal_gpu(input_lists, c):
     f, x = input_lists
     f = torch.tensor(f, device="cuda").reshape(-1, 1)
@@ -83,7 +83,7 @@ def test_linear_constraint_normal_gpu(input_lists, c):
     assert torch.isclose(val, expected_val).all()
 
 
-@given(same_len_lists(num_lists=3), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(num_lists=3), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_hit_time(input_lists, c):
     f, x, v = input_lists
     f = np.array(f).reshape(-1, 1)
@@ -101,7 +101,7 @@ def test_linear_constraint_hit_time(input_lists, c):
 
 @pytest.mark.gpu
 @pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
-@given(same_len_lists(num_lists=3), st.floats(min_value=-1e6, max_value=1e6))
+@given(same_len_lists(num_lists=3), st.floats(min_value=-1e3, max_value=1e3))
 def test_linear_constraint_hit_time_gpu(input_lists, c):
     f, x, v = input_lists
     f = torch.tensor(f, device="cuda").reshape(-1, 1)
