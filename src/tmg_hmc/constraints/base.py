@@ -13,6 +13,13 @@ class Constraint(Protocol):
     Abstract base class for constraints
     """
 
+    _registry: dict = {}
+
+    @classmethod
+    def register(cls, subclass):
+        Constraint._registry[subclass.__name__] = subclass
+        return subclass  # return it so it can be used as a decorator
+
     def value(self, x: Array) -> float:
         """
         Compute the value of the constraint at x
@@ -123,35 +130,31 @@ class Constraint(Protocol):
         d["type"] = self.__class__.__name__
         return d
 
-    # @classmethod
-    # def deserialize(cls, d: dict, gpu: bool) -> Constraint:
-    #     """
-    #     Deserialize the constraint from a dictionary
+    @classmethod
+    def deserialize(cls, d: dict, gpu: bool) -> Constraint:
+        """
+        Deserialize the constraint from a dictionary
 
-    #     Parameters
-    #     ----------
-    #     d : dict
-    #         Dictionary representation of the constraint
-    #     gpu : bool
-    #         Whether to load tensors onto the GPU
+        Parameters
+        ----------
+        d : dict
+            Dictionary representation of the constraint
+        gpu : bool
+            Whether to load tensors onto the GPU
 
-    #     Returns
-    #     -------
-    #     Constraint
-    #         Deserialized constraint object
-    #     """
-    #     if gpu:
-    #         for k, v in d.items():
-    #             if isinstance(v, Tensor):
-    #                 d[k] = v.cuda()
-    #     if d["type"] == "LinearConstraint":
-    #         return LinearConstraint(d["f"], d["c"])
-    #     elif d["type"] == "SimpleQuadraticConstraint":
-    #         return SimpleQuadraticConstraint.build_from_dict(d, gpu)
-    #     elif d["type"] == "QuadraticConstraint":
-    #         return QuadraticConstraint.build_from_dict(d, gpu)
-    #     else:
-    #         raise ValueError(f"Unknown constraint type {d['type']}")
+        Returns
+        -------
+        Constraint
+            Deserialized constraint object
+        """
+        if gpu:
+            for k, v in d.items():
+                if isinstance(v, Tensor):
+                    d[k] = v.cuda()
+        constraint_type = d["type"]
+        if constraint_type not in cls._registry:
+            raise ValueError(f"Unknown constraint type {constraint_type}")
+        return cls._registry[constraint_type].build_from_dict(d, gpu)
 
 
 class ProductConstraint(Constraint):

@@ -5,10 +5,11 @@ from tmg_hmc.utils import Array, Sparse, to_scalar
 from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
 from tmg_hmc.gpu_utils import Tensor, _TORCH_AVAILABLE
 from tmg_hmc.compiled import calc_all_solutions
-from tmg_hmc.constraints.base import BaseQuadraticConstraint, pis, eps
+from tmg_hmc.constraints.base import Constraint, BaseQuadraticConstraint, pis, eps
 import warnings
 
 
+@Constraint.register
 class SimpleQuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x^T A x + c >= 0
@@ -228,6 +229,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         return s[s > eps]
 
 
+@Constraint.register
 class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0

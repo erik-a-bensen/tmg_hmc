@@ -5,6 +5,7 @@ from tmg_hmc.utils import Array, to_scalar
 from tmg_hmc.constraints.base import Constraint, pis, eps
 
 
+@Constraint.register
 class LinearConstraint(Constraint):
     """
     Constraint of the form fx + c >= 0
