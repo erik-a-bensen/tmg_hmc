@@ -3,13 +3,10 @@ import pytest
 import numpy as np
 
 from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint
-from tmg_hmc import _TORCH_AVAILABLE
+from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
 if _TORCH_AVAILABLE:
-    import torch
-    from torch import Tensor
     GPU_AVAILABLE = torch.cuda.is_available()
 else:
-    torch = None
     GPU_AVAILABLE = False
 
 

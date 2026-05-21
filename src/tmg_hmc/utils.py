@@ -1,11 +1,10 @@
-import numpy as np 
+import numpy as np
 import cmath
-from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 from typing import Tuple, TypeAlias
+import importlib.util
 import os
-from tmg_hmc import get_torch, get_tensor_type
-
-torch, Tensor = get_torch(), get_tensor_type()
+from tmg_hmc.gpu_utils import torch, Tensor
 
 # ignore runtime warning
 np.seterr(divide='ignore', invalid='ignore')
@@ -23,11 +22,7 @@ def compiled_library_available() -> bool:
     bool
         True if the shared library is available, False otherwise.
     """
-    try:
-        import tmg_hmc.compiled as c 
-        return True
-    except ImportError:
-        return False
+    return importlib.util.find_spec("tmg_hmc.compiled") is not None
 
 def sparsify(A: Array) -> Array:
     """
@@ -67,7 +62,7 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     if isinstance(A, coo_matrix):
         return A.row, A.col, A.data
     elif isinstance(A, Tensor):
-        if A.layout == sparse_coo:
+        if A.layout == torch.sparse_coo:
             row, col = A.indices()
             return row, col, A.values()
         else:

@@ -5,12 +5,10 @@ import numpy as np
 import scipy.sparse as sp
 
 from tmg_hmc.constraints import SimpleQuadraticConstraint
-from tmg_hmc import _TORCH_AVAILABLE
+from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
 if _TORCH_AVAILABLE:
-    import torch
     GPU_AVAILABLE = torch.cuda.is_available()
 else:
-    torch = None
     GPU_AVAILABLE = False
 
 

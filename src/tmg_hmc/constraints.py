@@ -1,13 +1,11 @@
 from __future__ import annotations
 import numpy as np
-from typing import Protocol, Tuple, Protocol
+from typing import Tuple, Protocol
 from tmg_hmc.utils import Array, Sparse, to_scalar, get_sparse_elements
 from tmg_hmc.quad_solns import soln1, soln2, soln3, soln4, soln5, soln6, soln7, soln8
-from tmg_hmc import get_torch, get_tensor_type
+from tmg_hmc.gpu_utils import torch, Tensor, _TORCH_AVAILABLE
 from tmg_hmc.compiled import calc_all_solutions
 import warnings
-
-torch, Tensor = get_torch(), get_tensor_type()
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
@@ -35,7 +33,7 @@ class Constraint(Protocol):
         bool
             True if the constraint is satisfied, False otherwise
         """
-        return self.value(x) >= 0 
+        return self.value(x) >= 0
 
     def is_zero(self, x: Array) -> Tuple[bool, bool]:
         """
@@ -52,7 +50,7 @@ class Constraint(Protocol):
         """
         val = self.value(x)
         return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
-    
+
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
         """
         Compute the coefficients of the constraint equation along the trajectory defined by a and b
@@ -105,7 +103,7 @@ class Constraint(Protocol):
             Dictionary representation of the constraint
         """
         d = self.__dict__.copy()
-        
+
         # For sparse constraints, ensure we save S directly
         # and remove the individual row/column vectors that cause reconstruction issues
         if 'sparse' in d and d['sparse']:
@@ -117,15 +115,15 @@ class Constraint(Protocol):
             for key in keys_to_remove:
                 if key in d:
                     del d[key]
-        
+
         # Convert tensors to CPU
         for k, v in d.items():
             if isinstance(v, Tensor):
                 d[k] = v.cpu()
-        
+
         d['type'] = self.__class__.__name__
         return d
-    
+
     @classmethod
     def deserialize(cls, d: dict, gpu: bool) -> Constraint:
         """
@@ -155,7 +153,7 @@ class Constraint(Protocol):
             return QuadraticConstraint.build_from_dict(d, gpu)
         else:
             raise ValueError(f"Unknown constraint type {d['type']}")
-    
+
 
 class ProductConstraint(Constraint):
     """
@@ -188,7 +186,7 @@ class ProductConstraint(Constraint):
         for constraint in self.constraints:
             val *= constraint.value(x)
         return val
-    
+
     def normal(self, x: Array) -> Array:
         """
         Compute the normal vector of the product constraint at x
@@ -207,7 +205,7 @@ class ProductConstraint(Constraint):
         normals = [c.normal(x) for c in self.constraints]
         weighted = [normals[i] * np.prod(vals[:i] + vals[i+1:]) for i in range(len(self.constraints))]
         return sum(weighted)
-    
+
     def hit_time(self, x: Array, xdot: Array) -> Array:
         """
         Compute the hit time of the product constraint along the trajectory defined by x and xdot
@@ -236,7 +234,7 @@ class LinearConstraint(Constraint):
     Constraint of the form fx + c >= 0
     """
     def __init__(self, f: Array, c: float) -> None:
-        """ 
+        """
         Parameters
         ----------
         f : Array
@@ -246,7 +244,7 @@ class LinearConstraint(Constraint):
         """
         self.f = f
         self.c = c
-    
+
     def value(self, x: Array) -> float:
         """
         Compute the value of the constraint at x
@@ -297,7 +295,7 @@ class LinearConstraint(Constraint):
 
         Notes
         -----
-        These expressions are defined such that Eqn 2.22 in Pakman and Paninski (2014) 
+        These expressions are defined such that Eqn 2.22 in Pakman and Paninski (2014)
         simplifies to: q1 sin(t) + q2 cos(t) + c = 0
         """
         f = self.f
@@ -325,16 +323,16 @@ class LinearConstraint(Constraint):
         -----
         Hit time is computed by solving Eqn 2.26 in Pakman and Paninski (2014)
         See resources/HMC_exact_soln.nb for derivation
-        Due to the sum of inverse trig functions, we check the solution and 
-        the solution +- pi to ensure we capture all hit times. 
+        Due to the sum of inverse trig functions, we check the solution and
+        the solution +- pi to ensure we capture all hit times.
 
-        Only positive hit times are returned and any ghost solutions are filtered 
+        Only positive hit times are returned and any ghost solutions are filtered
         out at a later stage.
         """
         q1, q2 = self.compute_q(xdot, x)
         c = self.c
         u = np.sqrt(q1**2 + q2**2)
-        if (u < abs(c)) or (u == 0) or (q2 == 0): 
+        if (u < abs(c)) or (u == 0) or (q2 == 0):
             # No intersection so return NaN
             return np.array([np.nan])
         s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
@@ -351,7 +349,7 @@ class BaseQuadraticConstraint(Constraint):
     def _setup_values(self, A: Array, S: Array) -> None:
         """
         Setup internal values for dense matrix computation
-        
+
         Parameters
         ----------
         A : Array
@@ -361,7 +359,7 @@ class BaseQuadraticConstraint(Constraint):
 
         Notes
         -----
-        Sets up the internal methods for value, normal, and compute_q to use 
+        Sets up the internal methods for value, normal, and compute_q to use
         dense matrix computations.
         """
         self.A_orig = A
@@ -422,11 +420,11 @@ class BaseQuadraticConstraint(Constraint):
         """Placeholder method for sparse q term computation"""
         pass
 
-    @property 
+    @property
     def A(self):
         """Compute the transformed quadratic matrix A = S A_orig S on the fly"""
         return self.S @ self.A_orig @ self.S
-    
+
     def A_dot_x(self, x: Array) -> Array:
         """
         Compute A x using sparse matrix computations
@@ -491,7 +489,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         else:
             self._setup_values(A, S)
 
-    @classmethod 
+    @classmethod
     def build_from_dict(cls, d: dict, gpu: bool) -> SimpleQuadraticConstraint:
         """
         Build a SimpleQuadraticConstraint from a dictionary representation
@@ -515,16 +513,16 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         A = d['A_orig']
         c = d['c']
         S = d.get('S', None)
-        
+
         # Move to GPU if requested
         if gpu:
             if isinstance(S, Tensor):
                 S = S.cuda()
             if isinstance(A, Tensor):
                 A = A.cuda()
-        
+
         return cls(A, c, S, sparse)
-    
+
     def value_(self, x: Array) -> float:
         """
         Compute the value of the constraint at x using dense matrix computations
@@ -540,7 +538,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
             Value of the constraint at x given by x^T A x + c
         """
         return to_scalar(x.T @ self.A @ x + self.c)
-    
+
     def value_sparse(self, x: Array) -> float:
         """
         Compute the value of the constraint at x using sparse matrix computations
@@ -572,7 +570,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
             Normal vector at x given by 2 * A @ x
         """
         return 2 * self.A @ x
-    
+
     def normal_sparse(self, x: Array) -> Array:
         """
         Compute the normal vector at x using sparse matrix computations
@@ -615,7 +613,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         q3 = c + to_scalar(a.T @ A @ a)
         q4 = to_scalar(2 * a.T @ A @ b)
         return q1, q3, q4
-    
+
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float]:
         """
         Compute the 3 q terms for the simple quadratic constraint using sparse matrix computations
@@ -640,7 +638,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         q3 = self.c + to_scalar(self.x_dot_A_dot_x(a))
         q4 = to_scalar(2 * a.T @ self.A_dot_x(b))
         return q1, q3, q4
-    
+
     def hit_time(self, x: Array, xdot: Array) -> Array:
         """
         Compute the hit time for the simple quadratic constraint
@@ -661,19 +659,19 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         -----
         Hit time is computed by solving Eqn 2.45 in Pakman and Paninski (2014)
         See resources/HMC_exact_soln.nb for derivation
-        Only positive hit times are returned and any ghost solutions are filtered 
+        Only positive hit times are returned and any ghost solutions are filtered
         out at a later stage.
         """
         a, b = xdot, x
         q1, q3, q4 = self.compute_q(a, b)
         u = np.sqrt(q1**2 + q4**2)
-        if (u == 0) or (q4 == 0): 
+        if (u == 0) or (q4 == 0):
             # No intersection so return NaN
             return np.array([np.nan])
         s1 = (np.pi + np.arcsin((q1+2*q3)/u) -
-              np.arctan(q1/q4) + pis) / 2 
+              np.arctan(q1/q4) + pis) / 2
         s2 = (-np.arcsin((q1+2*q3)/u) -
-              np.arctan(q1/q4)+ pis) / 2 
+              np.arctan(q1/q4)+ pis) / 2
         s = np.hstack([s1, s2])
         return s[s > eps]
 
@@ -723,7 +721,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         else:
             self.hit_time = self.hit_time_py
 
-    @classmethod 
+    @classmethod
     def build_from_dict(cls, d: dict, gpu: bool) -> 'QuadraticConstraint':
         """
         Build a QuadraticConstraint from a dictionary representation
@@ -748,7 +746,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         c = d['c']
         b = d['b']
         S = d.get('S', None)
-        
+
         # Move to GPU if requested
         if gpu:
             if isinstance(S, Tensor):
@@ -757,13 +755,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
                 b = b.cuda()
             if isinstance(A, Tensor):
                 A = A.cuda()
-        
+
         return cls(A, b, c, S, sparse, d.get('compiled', True))
-    
+
     def value_(self, x: Array) -> float:
         """
         Compute the value of the constraint at x using dense matrix computations
-        
+
         Parameters
         ----------
         x : Array
@@ -774,7 +772,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             The value of the constraint at x given by x^T A x + b^T x + c
         """
         return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
-    
+
     def value_sparse(self, x: Array) -> float:
         """
         Compute the value of the constraint at x using sparse matrix computations
@@ -805,7 +803,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             Normal vector at x given by 2 * A @ x + b
         """
         return 2 * self.A @ x + self.b
-    
+
     def normal_sparse(self, x: Array) -> Array:
         """
         Compute the normal vector at x using sparse matrix computations
@@ -850,7 +848,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         q4 = to_scalar(2 * a.T @ A @ b)
         q5 = to_scalar(B.T @ a)
         return q1, q2, q3, q4, q5
-    
+
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
         """
         Compute the 5 q terms for the quadratic constraint using sparse matrix computations
@@ -900,7 +898,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         -----
         Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
         See resources/HMC_exact_soln.nb for derivation
-        Only positive hit times are returned and any ghost solutions are filtered 
+        Only positive hit times are returned and any ghost solutions are filtered
         out at a later stage.
 
         Compiled code is both written in C++ and optimized to remove all redundant computations
@@ -918,7 +916,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s = calc_all_solutions(*qs).reshape((1,8))
         s = (s + pis).flatten()
         return np.unique(s[s > 1e-7])
-    
+
     def hit_time_py(self, x: Array, xdot: Array) -> Array:
         """
         Compute the hit time for the quadratic constraint using Python code
@@ -939,10 +937,10 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         -----
         Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
         See resources/HMC_exact_soln.nb for derivation
-        Only positive hit times are returned and any ghost solutions are filtered 
+        Only positive hit times are returned and any ghost solutions are filtered
         out at a later stage.
 
-        It is highly recommended to use the compiled version for performance reasons. 
+        It is highly recommended to use the compiled version for performance reasons.
         This Python version is maintained for testing and validation purposes.
         """
         a, b = xdot, x

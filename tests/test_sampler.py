@@ -5,14 +5,13 @@ import os
 import numpy as np
 import scipy.sparse as sp
 
-from tmg_hmc import TMGSampler, _TORCH_AVAILABLE
+from tmg_hmc import TMGSampler
 from tmg_hmc.constraints import LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
+from tmg_hmc.gpu_utils import _TORCH_AVAILABLE, torch
 if _TORCH_AVAILABLE:
-    import torch
-    gpu_available = torch.cuda.is_available()
+    GPU_AVAILABLE = torch.cuda.is_available()
 else:
-    torch = None
-    gpu_available = False
+    GPU_AVAILABLE = False
 
 @st.composite
 def positive_definite_matrices(draw, min_size=2, max_size=10):
@@ -164,7 +163,7 @@ def test_unconstrained_sampling(dim):
     assert np.allclose(sample, expected_samples)
 
 @pytest.mark.gpu
-@pytest.mark.skipif(not gpu_available, reason="GPU not available")
+@pytest.mark.skipif(not GPU_AVAILABLE, reason="GPU not available")
 @given(st.integers(min_value=2, max_value=10))
 def test_unconstrained_sampling_gpu(dim):
     sampler = TMGSampler(Sigma=np.eye(dim), gpu=True)

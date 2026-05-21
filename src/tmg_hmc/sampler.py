@@ -5,9 +5,7 @@ from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticCon
 from tmg_hmc.utils import Array, sparsify, is_nonzero_array
 import warnings
 import pickle
-from tmg_hmc import get_torch, get_tensor_type
-
-torch, Tensor = get_torch(), get_tensor_type()
+from tmg_hmc.gpu_utils import torch
 
 class TMGSampler:
     """
@@ -28,7 +26,7 @@ class TMGSampler:
         gpu : bool, optional
             Whether to use GPU acceleration with PyTorch. Default is False.
         Sigma_half : Array, optional
-            Matrix such that Sigma_half @ Sigma_half.T = Sigma. 
+            Matrix such that Sigma_half @ Sigma_half.T = Sigma.
             If provided, Sigma is not needed.
         """
         if Sigma is None and Sigma_half is None:
@@ -42,19 +40,19 @@ class TMGSampler:
         self.constraint_violations = 0
         self.gpu = gpu
         self.x = None
-        
+
         if Sigma_half is not None:
             self._setup_sigma_half(Sigma_half)
         else:
             self._setup_sigma(Sigma)
         if self.gpu:
             self.mu = torch.tensor(self.mu).cuda()
-            
+
     def _setup_sigma(self, Sigma: Array) -> None:
         """
         Sets up the Sigma_half matrix from the covariance matrix Sigma.
         Ensures that Sigma is positive semi-definite.
-        
+
         Parameters
         ----------
         Sigma : Array
@@ -78,7 +76,7 @@ class TMGSampler:
             raise ValueError("Sigma must be a square matrix")
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
-        
+
         if self.gpu:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
@@ -96,7 +94,7 @@ class TMGSampler:
             self.Sigma_half = V @ torch.diag(torch.sqrt(s)) @ V.T
         else:
             self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
-        
+
     def _setup_sigma_half(self, Sigma_half: Array) -> None:
         """
         Sets up the Sigma_half matrix directly.
@@ -167,11 +165,11 @@ class TMGSampler:
         S = self.Sigma_half
         mu = self.mu
         if f is not None:
-            f = f.reshape(self.dim, 1) 
+            f = f.reshape(self.dim, 1)
         if A is not None:
             if not np.allclose(A, A.T):
                 raise ValueError("A must be symmetric")
-        
+
         if self.gpu:
             if A is not None:
                 A = torch.tensor(A).cuda()
@@ -182,7 +180,7 @@ class TMGSampler:
             A = sparsify(A)
         if (f is not None) and sparse:
             f = sparsify(f)
-        
+
         # A_new = S @ A @ S
         if (A is not None) and (f is not None):
             Amu = A @ mu
@@ -208,7 +206,7 @@ class TMGSampler:
             c_new = c_new.item()
         else:
             c_new = c_new[0,0]
-        
+
         if nonzero_A and nonzero_f:
             return QuadraticConstraint(A, f_new, c_new, S, sparse, compiled)
         elif nonzero_A and (not nonzero_f):
@@ -217,7 +215,7 @@ class TMGSampler:
             return LinearConstraint(f_new, c_new)
         else:
             raise ValueError("Constraint cannot be trivial (A and f both zero after transformation)")
-        
+
     def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
         """
         Adds a constraint to the sampler of the form:
@@ -307,11 +305,11 @@ class TMGSampler:
             cs.append(constraint)
         product_constraint = ProductConstraint(cs)
         self.constraints.append(product_constraint)
-            
+
     def _constraints_satisfied(self, x: Array) -> bool:
         """
         Checks if all constraints are satisfied at point x.
-        
+
         Parameters
         ----------
         x : Array
@@ -325,7 +323,7 @@ class TMGSampler:
         if len(self.constraints) == 0:
             return True
         return all([c.is_satisfied(x) for c in self.constraints])
-    
+
     def _propagate(self, x: Array, xdot: Array, t: float) -> Tuple[Array, Array]:
         """
         Propagates the state (x, xdot) forward in time by t according to the Hamiltonian dynamics
@@ -348,7 +346,7 @@ class TMGSampler:
         xnew = xdot * np.sin(t) + x * np.cos(t)
         xdotnew = xdot * np.cos(t) - x * np.sin(t)
         return xnew, xdotnew
-    
+
     def _hit_times(self, x: Array, xdot: Array) -> Tuple[Array, Array]:
         """
         Computes the hit times for all constraints given the current state (x, xdot).
@@ -382,12 +380,12 @@ class TMGSampler:
             return np.array([np.nan]), np.array([None])
         inds = np.argsort(times)
         return times[inds], cs[inds]
-    
+
     def _binary_search(self, x: Array, xdot: Array, b1: float, b2: float, c: Constraint) -> Tuple[Array, Array, float, bool]:
         """
         Performs a binary search to find the precise hit time for a constraint
         between bounds b1 and b2.
-        
+
         Parameters
         ----------
         x : Array
@@ -415,10 +413,10 @@ class TMGSampler:
         if np.sign(c.value(xmid)) != np.sign(c.value(x1)):
             return self._binary_search(x, xdot, b1, hmid, c)
         return self._binary_search(x, xdot, hmid, b2, c)
-    
+
     def _refine_hit_time(self, x: Array, xdot: Array, c: QuadraticConstraint) -> Tuple[Array, Array, float, bool]:
         """
-        Refines the hit time for a quadratic constraint by moving the position towards the constraint 
+        Refines the hit time for a quadratic constraint by moving the position towards the constraint
         boundary and performing a binary search.
 
         Parameters
@@ -429,7 +427,7 @@ class TMGSampler:
             Current momentum in the transformed space.
         c : QuadraticConstraint
             The quadratic constraint to refine.
-        
+
         Returns
         -------
         Tuple[Array, Array, float, bool]
@@ -447,7 +445,7 @@ class TMGSampler:
             # If the refined position is still on the same side of the constraint, no hit was found
             return x, xdot, 0, False
         return self._binary_search(x, xdot, 0, h, c)
-    
+
     def _iterate(self, x: Array, xdot: Array, verbose: bool = False) -> Array:
         """
         Performs a single iteration of the HMC sampler, propagating the state (x, xdot)
@@ -470,10 +468,10 @@ class TMGSampler:
         Notes
         -----
         This method handles refines hit times to improve accuracy and manages ghost hits.
-        As a fallback, if constraints are violated after propagation, the iteration is 
+        As a fallback, if constraints are violated after propagation, the iteration is
         redone with a new momentum. However this is extremely rare.
         """
-        t = 0 
+        t = 0
         i = 0
         x_init = x
         hs, cs = self._hit_times(x, xdot)
@@ -510,11 +508,11 @@ class TMGSampler:
             return x
         self.constraint_violations += 1
         if verbose:
-            print(f"Constraint violated, redoing iteration")
+            print("Constraint violated, redoing iteration")
 
         xdot = self.sample_xdot()
         return self._iterate(x_init, xdot, verbose)
-    
+
     def sample_xdot(self) -> Array:
         """
         Samples a new momentum vector xdot from the standard normal distribution handling GPU if necessary.
@@ -523,7 +521,7 @@ class TMGSampler:
             return torch.randn(self.dim, 1, dtype=torch.float64).cuda()
         else:
             return np.random.standard_normal(self.dim).reshape(self.dim, 1)
-            
+
     def sample(self, x0: Array = None, n_samples: int = 100, burn_in: int = 100, verbose=False, cont: bool = False) -> Array:
         """
         Generates samples from the truncated multivariate Gaussian distribution.
