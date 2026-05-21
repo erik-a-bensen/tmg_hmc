@@ -144,7 +144,7 @@ x0 = np.array([[0], [0]])
 samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 ```
 
-## Examples
+## Running the Example Notebooks
 See the `examples/` directory for:
 - Linear constraint examples
 - Quadratic constraint examples  
@@ -152,8 +152,18 @@ See the `examples/` directory for:
 - Truncated Gaussian process examples
 
 Install notebook dependencies first:
+From PyPI
 ```bash
 pip install tmg-hmc[examples]
+```
+Or locally
+```bash
+pip install -e .[examples]
+```
+
+Then launch Jupyter:
+```bash
+jupyter notebook examples/
 ```
 
 ## Testing

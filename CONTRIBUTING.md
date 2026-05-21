@@ -54,7 +54,7 @@ pip install -e .[dev]
 - Keep PRs focused — one feature or fix per PR
 - Include a clear description of what changed and why
 - All CI checks (tests + ruff) must pass before merging
-- For bug fixes, consider adding a test that would have caught the bug
+- For bug fixes, if possible, add a test that would have caught the bug
 
 ## Code Style
 
@@ -73,18 +73,6 @@ ruff check --fix src/
 To format code:
 ```bash
 ruff format src/
-```
-
-## Running the Example Notebooks
-
-Install notebook dependencies:
-```bash
-pip install -e .[examples]
-```
-
-Then launch Jupyter:
-```bash
-jupyter notebook examples/
 ```
 
 ## Questions
