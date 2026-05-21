@@ -10,10 +10,12 @@ import warnings
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
 
+
 class Constraint(Protocol):
     """
     Abstract base class for constraints
     """
+
     def value(self, x: Array) -> float:
         """
         Compute the value of the constraint at x
@@ -106,12 +108,12 @@ class Constraint(Protocol):
 
         # For sparse constraints, ensure we save S directly
         # and remove the individual row/column vectors that cause reconstruction issues
-        if 'sparse' in d and d['sparse']:
+        if "sparse" in d and d["sparse"]:
             # Keep S if it exists
-            if 'S' not in d and hasattr(self, 'S'):
-                d['S'] = self.S
+            if "S" not in d and hasattr(self, "S"):
+                d["S"] = self.S
             # Remove problematic sparse reconstruction data
-            keys_to_remove = ['s_rows', 's_cols', 'row_data', 'col_data']
+            keys_to_remove = ["s_rows", "s_cols", "row_data", "col_data"]
             for key in keys_to_remove:
                 if key in d:
                     del d[key]
@@ -121,7 +123,7 @@ class Constraint(Protocol):
             if isinstance(v, Tensor):
                 d[k] = v.cpu()
 
-        d['type'] = self.__class__.__name__
+        d["type"] = self.__class__.__name__
         return d
 
     @classmethod
@@ -145,11 +147,11 @@ class Constraint(Protocol):
             for k, v in d.items():
                 if isinstance(v, Tensor):
                     d[k] = v.cuda()
-        if d['type'] == 'LinearConstraint':
-            return LinearConstraint(d['f'], d['c'])
-        elif d['type'] == 'SimpleQuadraticConstraint':
+        if d["type"] == "LinearConstraint":
+            return LinearConstraint(d["f"], d["c"])
+        elif d["type"] == "SimpleQuadraticConstraint":
             return SimpleQuadraticConstraint.build_from_dict(d, gpu)
-        elif d['type'] == 'QuadraticConstraint':
+        elif d["type"] == "QuadraticConstraint":
             return QuadraticConstraint.build_from_dict(d, gpu)
         else:
             raise ValueError(f"Unknown constraint type {d['type']}")
@@ -159,6 +161,7 @@ class ProductConstraint(Constraint):
     """
     Constraint that is the product of multiple linear or quadratic constraints
     """
+
     def __init__(self, constraints: Tuple[Constraint, ...]) -> None:
         """
         Parameters
@@ -203,7 +206,10 @@ class ProductConstraint(Constraint):
         """
         vals = [c.value(x) for c in self.constraints]
         normals = [c.normal(x) for c in self.constraints]
-        weighted = [normals[i] * np.prod(vals[:i] + vals[i+1:]) for i in range(len(self.constraints))]
+        weighted = [
+            normals[i] * np.prod(vals[:i] + vals[i + 1 :])
+            for i in range(len(self.constraints))
+        ]
         return sum(weighted)
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
@@ -233,6 +239,7 @@ class LinearConstraint(Constraint):
     """
     Constraint of the form fx + c >= 0
     """
+
     def __init__(self, f: Array, c: float) -> None:
         """
         Parameters
@@ -335,17 +342,17 @@ class LinearConstraint(Constraint):
         if (u < abs(c)) or (u == 0) or (q2 == 0):
             # No intersection so return NaN
             return np.array([np.nan])
-        s1 = -np.arccos(-c/u) + np.arctan(q1/q2) + pis
-        s2 = np.arccos(-c/u) + np.arctan(q1/q2) + pis
+        s1 = -np.arccos(-c / u) + np.arctan(q1 / q2) + pis
+        s2 = np.arccos(-c / u) + np.arctan(q1 / q2) + pis
         s = np.hstack([s1, s2])
         return s[s > eps]
-
 
 
 class BaseQuadraticConstraint(Constraint):
     """
     Base class for quadratic constraints
     """
+
     def _setup_values(self, A: Array, S: Array) -> None:
         """
         Setup internal values for dense matrix computation
@@ -389,8 +396,12 @@ class BaseQuadraticConstraint(Constraint):
         self.n = A.shape[0]
         self.A_orig = A
         print(S)
-        self.s_rows = [S[i,:].reshape((1,self.n)) for i in rows] # S[i,:] is a row vector
-        self.s_cols = [S[:,j].reshape((self.n,1)) for j in cols] # S[:,j] is a column vector
+        self.s_rows = [
+            S[i, :].reshape((1, self.n)) for i in rows
+        ]  # S[i,:] is a row vector
+        self.s_cols = [
+            S[:, j].reshape((self.n, 1)) for j in cols
+        ]  # S[:,j] is a column vector
         self.a_vals = vals.reshape((self.n_comps,))
         self.value = self.value_sparse
         self.normal = self.normal_sparse
@@ -439,8 +450,15 @@ class BaseQuadraticConstraint(Constraint):
         Array
             Result of A x computation
         """
-        dot_prods = [self.s_rows[i].reshape((1,self.n)) @ x for i in range(self.n_comps)]
-        return sum([self.a_vals[i]*dot_prods[i]*self.s_cols[i].reshape((self.n,1)) for i in range(self.n_comps)])
+        dot_prods = [
+            self.s_rows[i].reshape((1, self.n)) @ x for i in range(self.n_comps)
+        ]
+        return sum(
+            [
+                self.a_vals[i] * dot_prods[i] * self.s_cols[i].reshape((self.n, 1))
+                for i in range(self.n_comps)
+            ]
+        )
 
     def x_dot_A_dot_x(self, x: Array) -> float:
         """
@@ -458,10 +476,12 @@ class BaseQuadraticConstraint(Constraint):
         """
         return x.T @ self.A_dot_x(x)
 
+
 class SimpleQuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x^T A x + c >= 0
     """
+
     def __init__(self, A: Array, c: float, S: Array, sparse: bool = False):
         """
         Parameters
@@ -508,11 +528,13 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         """
         if gpu and not _TORCH_AVAILABLE:
             gpu = False
-            warnings.warn("GPU requested but PyTorch is not available. Loading on CPU instead.")
-        sparse = d['sparse']
-        A = d['A_orig']
-        c = d['c']
-        S = d.get('S', None)
+            warnings.warn(
+                "GPU requested but PyTorch is not available. Loading on CPU instead."
+            )
+        sparse = d["sparse"]
+        A = d["A_orig"]
+        c = d["c"]
+        S = d.get("S", None)
 
         # Move to GPU if requested
         if gpu:
@@ -668,20 +690,26 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         if (u == 0) or (q4 == 0):
             # No intersection so return NaN
             return np.array([np.nan])
-        s1 = (np.pi + np.arcsin((q1+2*q3)/u) -
-              np.arctan(q1/q4) + pis) / 2
-        s2 = (-np.arcsin((q1+2*q3)/u) -
-              np.arctan(q1/q4)+ pis) / 2
+        s1 = (np.pi + np.arcsin((q1 + 2 * q3) / u) - np.arctan(q1 / q4) + pis) / 2
+        s2 = (-np.arcsin((q1 + 2 * q3) / u) - np.arctan(q1 / q4) + pis) / 2
         s = np.hstack([s1, s2])
         return s[s > eps]
-
 
 
 class QuadraticConstraint(BaseQuadraticConstraint):
     """
     Constraint of the form x**T A x + b**T x + c >= 0
     """
-    def __init__(self, A: Array, b: Array, c: float, S: Array, sparse: bool = True, compiled: bool = True):
+
+    def __init__(
+        self,
+        A: Array,
+        b: Array,
+        c: float,
+        S: Array,
+        sparse: bool = True,
+        compiled: bool = True,
+    ):
         """
         Parameters
         ----------
@@ -722,7 +750,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             self.hit_time = self.hit_time_py
 
     @classmethod
-    def build_from_dict(cls, d: dict, gpu: bool) -> 'QuadraticConstraint':
+    def build_from_dict(cls, d: dict, gpu: bool) -> "QuadraticConstraint":
         """
         Build a QuadraticConstraint from a dictionary representation
 
@@ -740,12 +768,14 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         """
         if gpu and not _TORCH_AVAILABLE:
             gpu = False
-            warnings.warn("GPU requested but PyTorch is not available. Loading on CPU instead.")
-        sparse = d['sparse']
-        A = d['A_orig']
-        c = d['c']
-        b = d['b']
-        S = d.get('S', None)
+            warnings.warn(
+                "GPU requested but PyTorch is not available. Loading on CPU instead."
+            )
+        sparse = d["sparse"]
+        A = d["A_orig"]
+        c = d["c"]
+        b = d["b"]
+        S = d.get("S", None)
 
         # Move to GPU if requested
         if gpu:
@@ -756,7 +786,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             if isinstance(A, Tensor):
                 A = A.cuda()
 
-        return cls(A, b, c, S, sparse, d.get('compiled', True))
+        return cls(A, b, c, S, sparse, d.get("compiled", True))
 
     def value_(self, x: Array) -> float:
         """
@@ -819,7 +849,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         """
         return 2 * self.A_dot_x(x) + self.b
 
-    def compute_q_(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
+    def compute_q_(
+        self, a: Array, b: Array
+    ) -> Tuple[float, float, float, float, float]:
         """
         Compute the 5 q terms for the quadratic constraint using dense matrix computations
 
@@ -849,7 +881,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         q5 = to_scalar(B.T @ a)
         return q1, q2, q3, q4, q5
 
-    def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, float, float, float, float]:
+    def compute_q_sparse(
+        self, a: Array, b: Array
+    ) -> Tuple[float, float, float, float, float]:
         """
         Compute the 5 q terms for the quadratic constraint using sparse matrix computations
 
@@ -905,7 +939,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         see paper for details.
         """
         a, b = xdot, x
-        pis = np.array([-2, 0, 2]).reshape(-1,1)*np.pi
+        pis = np.array([-2, 0, 2]).reshape(-1, 1) * np.pi
         qs = self.compute_q(a, b)
         # Old ctypes version --- IGNORE ---
         # soln = lib.calc_all_solutions(*qs)
@@ -913,7 +947,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         # lib.free_ptr(soln)
 
         # New pybind11 compiled version
-        s = calc_all_solutions(*qs).reshape((1,8))
+        s = calc_all_solutions(*qs).reshape((1, 8))
         s = (s + pis).flatten()
         return np.unique(s[s > 1e-7])
 
@@ -944,7 +978,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         This Python version is maintained for testing and validation purposes.
         """
         a, b = xdot, x
-        pis = np.array([-2, 0, 2]).reshape(-1,1)*np.pi
+        pis = np.array([-2, 0, 2]).reshape(-1, 1) * np.pi
         qs = self.compute_q(a, b)
         s1 = soln1(*qs) + pis
         s2 = soln2(*qs) + pis

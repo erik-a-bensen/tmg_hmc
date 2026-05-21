@@ -4,8 +4,10 @@ _TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 
 if _TORCH_AVAILABLE:
     import torch
+
     Tensor = torch.Tensor
 else:
+
     class Tensor:
         pass
 
