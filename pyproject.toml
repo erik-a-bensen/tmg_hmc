@@ -31,13 +31,19 @@ gpu = [
     "torch>=2.0.0"
 ]
 
+examples = [
+    "jupyter",
+    "notebook",
+    "matplotlib"
+]
+
 test = [
     "pytest>=7.0",
     "pytest-cov",
     "hypothesis>=6.100",
 ]
 
-all = ["tmg_hmc[gpu,test]"]
+dev = ["tmg_hmc[gpu,test,examples]"]
 
 [project.urls]
 Homepage = "https://github.com/erik-a-bensen/tmg_hmc"

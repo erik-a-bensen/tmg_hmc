@@ -33,6 +33,11 @@ Base package install
 pip install tmg-hmc
 ```
 
+Example notebook support
+```bash
+pip install tmg-hmc[examples]
+```
+
 Optional GPU support
 ```bash
 pip install tmg-hmc[gpu]
@@ -57,7 +62,7 @@ Optional Testing Dependencies
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc 
-pip install .[test] # Or .[all] for test + gpu
+pip install .[test] # Or .[dev] for test + examples + gpu
 ```
 
 **Requirements:**
@@ -146,6 +151,11 @@ See the `examples/` directory for:
 - Product constraint examples
 - Truncated Gaussian process examples
 
+Install notebook dependencies first:
+```bash
+pip install tmg-hmc[examples]
+```
+
 ## Testing
 
 ### Quick Start
@@ -184,7 +194,7 @@ See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI s
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
