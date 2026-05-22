@@ -98,7 +98,7 @@ class Constraint(Protocol):
             norm = torch.sqrt(f.T @ f)
             f = f / norm
         else:
-            norm = np.sqrt(float(f.T @ f))
+            norm = np.sqrt(f.T @ f)
             f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
 

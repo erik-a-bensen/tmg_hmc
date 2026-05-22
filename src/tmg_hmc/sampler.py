@@ -45,6 +45,7 @@ class TMGSampler:
             Matrix such that Sigma_half @ Sigma_half.T = Sigma.
             If provided, Sigma is not needed.
         """
+        self.gpu = gpu
         if Sigma_half is not None:
             self.dim = len(Sigma_half)
             self._setup_sigma_half(Sigma_half)
@@ -59,7 +60,6 @@ class TMGSampler:
         self.T = T
         self.constraints: list[Constraint] = []
         self.constraint_violations = 0
-        self.gpu = gpu
         self.x: Array | None = None
 
         if self.gpu:
