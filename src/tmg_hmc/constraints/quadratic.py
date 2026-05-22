@@ -522,7 +522,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         return np.unique(s[s > 1e-7])
-    
+
     def hit_time(self, x: Array, xdot: Array) -> Array:
         """
         Dispatch method for the hit time for the quadratic constraint

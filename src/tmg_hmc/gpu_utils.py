@@ -8,8 +8,10 @@ if TYPE_CHECKING:
     from torch import Tensor
 elif _TORCH_AVAILABLE:
     import torch
+
     Tensor = torch.Tensor
 else:
+
     class Tensor:  # type: ignore[no-redef]
         pass
 

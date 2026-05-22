@@ -202,9 +202,9 @@ class TMGSampler:
                 f = torch.tensor(f).cuda()
 
         if (A is not None) and sparse:
-            A = sparsify(A) # type: ignore[assignment]
+            A = sparsify(A)  # type: ignore[assignment]
         if (f is not None) and sparse:
-            f = sparsify(f) # type: ignore[assignment]
+            f = sparsify(f)  # type: ignore[assignment]
 
         # A_new = S @ A @ S
         if (A is not None) and (f is not None):
@@ -641,7 +641,7 @@ class TMGSampler:
                 print(f"Constraint violations: {self.constraint_violations}")
         elif (not cont) and (x0 is None):
             raise ValueError("Must provide initial point if not continuing")
-        
+
         if self.x is None:
             raise ValueError("Must run burn-in before sampling with cont=True")
 

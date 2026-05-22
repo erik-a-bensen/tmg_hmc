@@ -238,9 +238,11 @@ class ProductConstraint(Constraint):
             ht = constraint.hit_time(x, xdot)
             hit_times.append(ht)
         return np.concatenate(hit_times)
-    
+
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
-        raise NotImplementedError("ProductConstraint does not support compute_q directly")
+        raise NotImplementedError(
+            "ProductConstraint does not support compute_q directly"
+        )
 
 
 class BaseQuadraticConstraint(Constraint):
@@ -250,7 +252,6 @@ class BaseQuadraticConstraint(Constraint):
 
     def __init__(self) -> None:
         self.compute_type = "dense"
-
 
     def _setup_values(self, A: Array, S: Array) -> None:
         """

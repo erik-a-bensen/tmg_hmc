@@ -9,7 +9,7 @@ from tmg_hmc.gpu_utils import torch, Tensor
 # ignore runtime warning
 np.seterr(divide="ignore", invalid="ignore")
 
-Array: TypeAlias = np.ndarray | Tensor 
+Array: TypeAlias = np.ndarray | Tensor
 Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix | Tensor
 base_path = os.path.dirname(os.path.abspath(__file__))
 
