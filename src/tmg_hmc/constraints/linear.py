@@ -9,8 +9,8 @@ import warnings
 
 @Constraint.register
 class LinearConstraint(Constraint):
-    """
-    Constraint of the form fx + c >= 0
+    r"""
+    Constraint of the form :math:`\mathbf{f}^T \mathbf{x} + c \geq 0`
     """
 
     def __init__(self, f: Array, c: float) -> None:
@@ -53,7 +53,7 @@ class LinearConstraint(Constraint):
         return cls(f, c)
 
     def value(self, x: Array) -> float:
-        """
+        r"""
         Compute the value of the constraint at x
 
         Parameters
@@ -64,12 +64,13 @@ class LinearConstraint(Constraint):
         Returns
         -------
         float
-            Value of the constraint at x given by f^T x + c
+            Value of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{f}^T \mathbf{x} + c`
         """
         return to_scalar(self.f.T @ x + self.c)
 
     def normal(self, x: Array) -> Array:
-        """
+        r"""
         Compute the normal vector of the constraint at x
 
         Parameters
@@ -80,12 +81,13 @@ class LinearConstraint(Constraint):
         Returns
         -------
         Array
-            Normal vector of the constraint at x given by f
+            Normal vector of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{f}`
         """
         return self.f
 
     def compute_q(self, a: Array, b: Array) -> Tuple[float, float]:
-        """
+        r"""
         Compute the 2 q terms for the linear constraint
 
         Parameters
@@ -103,7 +105,11 @@ class LinearConstraint(Constraint):
         Notes
         -----
         These expressions are defined such that Eqn 2.22 in Pakman and Paninski (2014)
-        simplifies to: q1 sin(t) + q2 cos(t) + c = 0
+        simplifies to:
+
+        .. math::
+
+            q_1 \sin(t) + q_2 \cos(t) + c = 0
         """
         f = self.f
         q1 = to_scalar(f.T @ a)
@@ -111,7 +117,7 @@ class LinearConstraint(Constraint):
         return q1, q2
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
-        """
+        r"""
         Compute the hit time of the constraint along the trajectory defined by x and xdot
 
         Parameters
@@ -131,7 +137,7 @@ class LinearConstraint(Constraint):
         Hit time is computed by solving Eqn 2.26 in Pakman and Paninski (2014)
         See resources/HMC_exact_soln.nb for derivation
         Due to the sum of inverse trig functions, we check the solution and
-        the solution +- pi to ensure we capture all hit times.
+        the solution :math:`\pm \pi` to ensure we capture all hit times.
 
         Only positive hit times are returned and any ghost solutions are filtered
         out at a later stage.

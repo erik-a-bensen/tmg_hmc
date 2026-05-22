@@ -11,8 +11,8 @@ import warnings
 
 @Constraint.register
 class SimpleQuadraticConstraint(BaseQuadraticConstraint):
-    """
-    Constraint of the form x^T A x + c >= 0
+    r"""
+    Constraint of the form :math:`\mathbf{x}^T A \mathbf{x} + c \geq 0`
     """
 
     def __init__(self, A: Array, c: float, S: Array, sparse: bool = False):
@@ -80,7 +80,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         return cls(A, c, S, sparse)
 
     def value_(self, x: Array) -> float:
-        """
+        r"""
         Compute the value of the constraint at x using dense matrix computations
 
         Parameters
@@ -91,12 +91,13 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            Value of the constraint at x given by x^T A x + c
+            Value of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{x}^T A \mathbf{x} + c`
         """
         return to_scalar(x.T @ self.A @ x + self.c)
 
     def value_sparse(self, x: Array) -> float:
-        """
+        r"""
         Compute the value of the constraint at x using sparse matrix computations
 
         Parameters
@@ -107,12 +108,13 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            Value of the constraint at x given by x^T A x + c
+            Value of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{x}^T A \mathbf{x} + c`
         """
         return to_scalar(x.T @ self.A_dot_x(x) + self.c)
 
     def normal_(self, x: Array) -> Array:
-        """
+        r"""
         Compute the normal vector at x using dense matrix computations
 
         Parameters
@@ -123,12 +125,12 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x
+            Normal vector at :math:`\mathbf{x}` given by :math:`2 A \mathbf{x}`
         """
         return 2 * self.A @ x
 
     def normal_sparse(self, x: Array) -> Array:
-        """
+        r"""
         Compute the normal vector at x using sparse matrix computations
 
         Parameters
@@ -139,7 +141,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x
+            Normal vector at :math:`\mathbf{x}` given by :math:`2 A \mathbf{x}`
         """
         return 2 * self.A_dot_x(x)
 
@@ -232,8 +234,8 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
 
 @Constraint.register
 class QuadraticConstraint(BaseQuadraticConstraint):
-    """
-    Constraint of the form x**T A x + f**T x + c >= 0
+    r"""
+    Constraint of the form :math:`\mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0`
     """
 
     def __init__(
@@ -322,7 +324,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         return cls(A, f, c, S, sparse, d.get("compiled", True))
 
     def value_(self, x: Array) -> float:
-        """
+        r"""
         Compute the value of the constraint at x using dense matrix computations
 
         Parameters
@@ -332,12 +334,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            The value of the constraint at x given by x^T A x + f^T x + c
+            The value of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c`
         """
         return to_scalar(x.T @ self.A @ x + self.f.T @ x + self.c)
 
     def value_sparse(self, x: Array) -> float:
-        """
+        r"""
         Compute the value of the constraint at x using sparse matrix computations
 
         Parameters
@@ -348,12 +351,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            The value of the constraint at x given by x^T A x + f^T x + c
+            The value of the constraint at :math:`\mathbf{x}` given by
+            :math:`\mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c`
         """
         return to_scalar(self.x_dot_A_dot_x(x) + self.f.T @ x + self.c)
 
     def normal_(self, x: Array) -> Array:
-        """
+        r"""
         Compute the normal vector at x using dense matrix computations
         Parameters
         ----------
@@ -363,12 +367,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x + f
+            Normal vector at :math:`\mathbf{x}` given by
+            :math:`2 A \mathbf{x} + \mathbf{f}`
         """
         return 2 * self.A @ x + self.f
 
     def normal_sparse(self, x: Array) -> Array:
-        """
+        r"""
         Compute the normal vector at x using sparse matrix computations
         Parameters
         ----------
@@ -378,7 +383,8 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x + f
+            Normal vector at :math:`\mathbf{x}` given by
+            :math:`2 A \mathbf{x} + \mathbf{f}`
         """
         return 2 * self.A_dot_x(x) + self.f
 

@@ -60,14 +60,16 @@ class Constraint(Protocol):
         return bool(np.isclose(val, 0)), bool(np.isclose(val, 0, atol=1e-2))
 
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
-        """
-        Compute the coefficients of the constraint equation along the trajectory defined by a and b
+        r"""
+        Compute the coefficients of the constraint equation along the trajectory defined by
+        :math:`\mathbf{a}` and :math:`\mathbf{b}`.
         """
         ...
 
     def hit_time(self, a: Array, b: Array) -> Array:
-        """
-        Compute the hit time of the constraint along the trajectory defined by a and b
+        r"""
+        Compute the hit time of the constraint along the trajectory defined by
+        :math:`\mathbf{a}` and :math:`\mathbf{b}`.
         """
         ...
 
@@ -218,8 +220,9 @@ class ProductConstraint(Constraint):
         return sum(weighted[1:], weighted[0])
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
-        """
-        Compute the hit time of the product constraint along the trajectory defined by x and xdot
+        r"""
+        Compute the hit time of the product constraint along the trajectory defined by
+        :math:`\mathbf{x}` and :math:`\dot{\mathbf{x}}`.
 
         Parameters
         ----------
@@ -384,17 +387,17 @@ class BaseQuadraticConstraint(Constraint):
         return sum(terms[1:], terms[0])
 
     def x_dot_A_dot_x(self, x: Array) -> float:
-        """
-        Compute x^T A x using sparse matrix computations
+        r"""
+        Compute :math:`\mathbf{x}^T A \mathbf{x}` using sparse matrix computations
 
         Parameters
         ----------
         x : Array
-            Point to evaluate x^T A x at
+            Point to evaluate :math:`\mathbf{x}^T A \mathbf{x}` at
 
         Returns
         -------
         float
-            Result of x^T A x computation
+            Result of :math:`\mathbf{x}^T A \mathbf{x}` computation
         """
         return to_scalar(x.T @ self.A_dot_x(x))

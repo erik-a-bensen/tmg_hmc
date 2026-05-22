@@ -29,7 +29,7 @@ class TMGSampler:
         *,
         Sigma_half: Array | None = None,
     ) -> None:
-        """
+        r"""
         Parameters
         ----------
         mu : Array, optional
@@ -38,11 +38,11 @@ class TMGSampler:
             Covariance matrix of the Gaussian distribution. Must be positive semi-definite.
             Do not provide if Sigma_half is given.
         T : float, optional
-            Integration time for the Hamiltonian dynamics. Default is pi/2.
+            Integration time for the Hamiltonian dynamics. Default is :math:`\pi/2`.
         gpu : bool, optional
             Whether to use GPU acceleration with PyTorch. Default is False.
         Sigma_half : Array, optional
-            Matrix such that Sigma_half @ Sigma_half.T = Sigma.
+            Matrix such that :math:`S S^T = \Sigma`.
             If provided, Sigma is not needed.
         """
         self.gpu = gpu
@@ -113,13 +113,13 @@ class TMGSampler:
             self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
 
     def _setup_sigma_half(self, Sigma_half: Array) -> None:
-        """
+        r"""
         Sets up the Sigma_half matrix directly.
 
         Parameters
         ----------
         Sigma_half : Array
-            Matrix such that Sigma_half @ Sigma_half.T = Sigma.
+            Matrix such that :math:`S S^T = \Sigma`.
 
         Raises
         ------
@@ -157,9 +157,12 @@ class TMGSampler:
         sparse: bool = True,
         compiled: bool = True,
     ) -> Constraint:
-        """
-        Builds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+        r"""
+        Builds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -182,10 +185,13 @@ class TMGSampler:
         Notes
         -----
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero, the appropriate constraint type is chosen.
         """
         S = self.Sigma_half
         mu = self.mu
@@ -255,8 +261,11 @@ class TMGSampler:
         compiled: bool = True,
     ) -> None:
         r"""
-        Adds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+        Adds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -279,11 +288,10 @@ class TMGSampler:
         Notes
         -----
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
 
         .. math::
 
-            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \mathbf{f}^T \pmb{\mu} + c) \geq 0
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
 
         where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
         Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
@@ -302,8 +310,11 @@ class TMGSampler:
         compiled: bool = True,
     ) -> None:
         r"""
-        Adds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+        Adds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -325,11 +336,10 @@ class TMGSampler:
         -----
         For product constraints, you must provide lists of each component (A, f, c).
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
 
         .. math::
 
-            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \mathbf{f}^T \pmb{\mu} + c) \geq 0
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
 
         where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
         Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
