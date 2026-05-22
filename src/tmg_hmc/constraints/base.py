@@ -293,7 +293,6 @@ class BaseQuadraticConstraint(Constraint):
         self.n_comps = len(rows)
         self.n = A.shape[0]
         self.A_orig = A
-        print(S)
         self.s_rows = [
             S[i, :].reshape((1, self.n)) for i in rows
         ]  # S[i,:] is a row vector
