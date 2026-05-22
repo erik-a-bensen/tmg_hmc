@@ -254,7 +254,7 @@ class TMGSampler:
         sparse: bool = True,
         compiled: bool = True,
     ) -> None:
-        """
+        r"""
         Adds a constraint to the sampler of the form:
             x.T @ A @ x + f.T @ x + c >= 0
 
@@ -280,9 +280,14 @@ class TMGSampler:
         -----
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
         The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \mathbf{f}^T \pmb{\mu} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
+        the appropriate constraint type is chosen.
         """
         constraint = self._build_constraint(
             A=A, f=f, c=c, sparse=sparse, compiled=compiled
@@ -296,7 +301,7 @@ class TMGSampler:
         sparse: bool = True,
         compiled: bool = True,
     ) -> None:
-        """
+        r"""
         Adds a constraint to the sampler of the form:
             x.T @ A @ x + f.T @ x + c >= 0
 
@@ -321,9 +326,14 @@ class TMGSampler:
         For product constraints, you must provide lists of each component (A, f, c).
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
         The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \mathbf{f}^T \pmb{\mu} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
+        the appropriate constraint type is chosen.
         """
 
         def parse_param(p):
