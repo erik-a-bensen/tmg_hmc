@@ -100,7 +100,7 @@ def test_quadratic_constraint_value(input_lists, c):
     A, S, f, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     val = constraint.value(x)
     Atilde = S @ A @ S
     assert np.allclose(constraint.A, Atilde)
@@ -120,7 +120,7 @@ def test_quadratic_constraint_value_gpu(input_lists, c):
     S = torch.tensor(S, device="cuda")
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     val = constraint.value(x)
     Atilde = S @ A @ S
     assert torch.allclose(constraint.A, Atilde)
@@ -134,7 +134,7 @@ def test_quadratic_constraint_value_sparse(input_lists, c):
     A, S, f, x = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     val = constraint.value(x)
     Atilde = S @ A @ S  # Note: do not test Atilde, not stored in sparse case
     expected_val = x.T @ Atilde @ x + f.T @ x + c
@@ -153,7 +153,7 @@ def test_quadratic_constraint_value_sparse_gpu(input_lists, c):
     S = torch.tensor(S, device="cuda")
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     val = constraint.value(x)
     Atilde = S @ A @ S  # Note: do not test Atilde, not stored in sparse case
     expected_val = x.T @ Atilde @ x + f.T @ x + c
@@ -167,7 +167,7 @@ def test_quadratic_constraint_normal(input_lists, c):
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
     Atilde = S @ A @ S
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     val = constraint.normal(x)
     expected_val = 2 * Atilde @ x + f
     assert isinstance(val, np.ndarray)
@@ -186,7 +186,7 @@ def test_quadratic_constraint_normal_gpu(input_lists, c):
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
     Atilde = S @ A @ S
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     val = constraint.normal(x)
     expected_val = 2 * Atilde @ x + f
     assert isinstance(val, torch.Tensor)
@@ -199,7 +199,7 @@ def test_quadratic_constraint_normal_sparse(input_lists, c):
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
     Atilde = S @ A @ S
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     val = constraint.normal(x)
     expected_val = 2 * Atilde @ x + f
     assert isinstance(val, np.ndarray)
@@ -218,7 +218,7 @@ def test_quadratic_constraint_normal_sparse_gpu(input_lists, c):
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
     Atilde = S @ A @ S
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     val = constraint.normal(x)
     expected_val = 2 * Atilde @ x + f
     assert isinstance(val, torch.Tensor)
@@ -230,7 +230,7 @@ def test_quadratic_constraint_hit_time(input_lists, c):
     A, S, f, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     ts = constraint.hit_time(x, v)
     assert isinstance(ts, np.ndarray)
     nans = np.isnan(ts)
@@ -251,7 +251,7 @@ def test_quadratic_constraint_hit_time_gpu(input_lists, c):
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
     v = torch.tensor(v, device="cuda")
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False)
     ts = constraint.hit_time(x, v)
     assert isinstance(ts, np.ndarray)
     nans = np.isnan(ts)
@@ -265,7 +265,7 @@ def test_quadratic_constraint_hit_time_sparse(input_lists, c):
     A, S, f, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     ts = constraint.hit_time(x, v)
     assert isinstance(ts, np.ndarray)
     nans = np.isnan(ts)
@@ -286,7 +286,7 @@ def test_quadratic_constraint_hit_time_sparse_gpu(input_lists, c):
     f = torch.tensor(f, device="cuda")
     x = torch.tensor(x, device="cuda")
     v = torch.tensor(v, device="cuda")
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=True)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=True)
     ts = constraint.hit_time(x, v)
     assert isinstance(ts, np.ndarray)
     nans = np.isnan(ts)
@@ -300,7 +300,7 @@ def test_quadratic_constraint_hit_time_uncompiled(input_lists, c):
     A, S, f, x, v = input_lists
     assume(not np.allclose(A, np.zeros_like(A)))  # Ensure A is not the zero matrix
     assume(not np.allclose(f, np.zeros_like(f)))  # Ensure f is not the zero vector
-    constraint = QuadraticConstraint(A=A, b=f, c=c, S=S, sparse=False, compiled=False)
+    constraint = QuadraticConstraint(A=A, f=f, c=c, S=S, sparse=False, compiled=False)
     ts = constraint.hit_time(x, v)
     assert isinstance(ts, np.ndarray)
     nans = np.isnan(ts)

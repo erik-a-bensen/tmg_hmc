@@ -233,13 +233,13 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
 @Constraint.register
 class QuadraticConstraint(BaseQuadraticConstraint):
     """
-    Constraint of the form x**T A x + b**T x + c >= 0
+    Constraint of the form x**T A x + f**T x + c >= 0
     """
 
     def __init__(
         self,
         A: Array,
-        b: Array,
+        f: Array,
         c: float,
         S: Array,
         sparse: bool = True,
@@ -250,7 +250,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         ----------
         A : Array
             The quadratic term matrix
-        b : Array
+        f : Array
             The linear term vector
         c : float
             The constant term
@@ -268,7 +268,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         It is highly recommended to use compiled code for performance reasons.
         """
         self.c = c
-        self.b = b
+        self.f = f
         if isinstance(A, Sparse):
             sparse = True
         self.sparse = sparse or compiled
@@ -305,20 +305,21 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         sparse = d["sparse"]
         A = d["A_orig"]
         c = d["c"]
-        b = d["b"]
+        f = d["f"]
         S = d.get("S", None)
 
         # Move to GPU if requested
         if gpu:
             if isinstance(S, Tensor):
                 S = S.cuda()
-            if isinstance(b, Tensor):
-                b = b.cuda()
+            if isinstance(f, Tensor):
+                f = f.cuda()
             if isinstance(A, Tensor):
                 A = A.cuda()
 
         assert S is not None, "S must be provided in the dictionary"
-        return cls(A, b, c, S, sparse, d.get("compiled", True))
+        assert f is not None, "f must be provided in the dictionary"
+        return cls(A, f, c, S, sparse, d.get("compiled", True))
 
     def value_(self, x: Array) -> float:
         """
@@ -331,9 +332,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            The value of the constraint at x given by x^T A x + b^T x + c
+            The value of the constraint at x given by x^T A x + f^T x + c
         """
-        return to_scalar(x.T @ self.A @ x + self.b.T @ x + self.c)
+        return to_scalar(x.T @ self.A @ x + self.f.T @ x + self.c)
 
     def value_sparse(self, x: Array) -> float:
         """
@@ -347,9 +348,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         float
-            The value of the constraint at x given by x^T A x + b^T x + c
+            The value of the constraint at x given by x^T A x + f^T x + c
         """
-        return to_scalar(self.x_dot_A_dot_x(x) + self.b.T @ x + self.c)
+        return to_scalar(self.x_dot_A_dot_x(x) + self.f.T @ x + self.c)
 
     def normal_(self, x: Array) -> Array:
         """
@@ -362,9 +363,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x + b
+            Normal vector at x given by 2 * A @ x + f
         """
-        return 2 * self.A @ x + self.b
+        return 2 * self.A @ x + self.f
 
     def normal_sparse(self, x: Array) -> Array:
         """
@@ -377,9 +378,9 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         Returns
         -------
         Array
-            Normal vector at x given by 2 * A @ x + b
+            Normal vector at x given by 2 * A @ x + f
         """
-        return 2 * self.A_dot_x(x) + self.b
+        return 2 * self.A_dot_x(x) + self.f
 
     def compute_q_(
         self, a: Array, b: Array
@@ -404,13 +405,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         These expressions are defined in Eqns 2.40-2.44 in Pakman and Paninski (2014)
         """
         A = self.A
-        B = self.b
+        F = self.f
         c = self.c
         q1 = to_scalar(b.T @ A @ b - a.T @ A @ a)
-        q2 = to_scalar(B.T @ b)
+        q2 = to_scalar(F.T @ b)
         q3 = c + to_scalar(a.T @ A @ a)
         q4 = to_scalar(2 * a.T @ A @ b)
-        q5 = to_scalar(B.T @ a)
+        q5 = to_scalar(F.T @ a)
         return q1, q2, q3, q4, q5
 
     def compute_q_sparse(
@@ -435,13 +436,13 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         -----
         These expressions are defined in Eqns 2.40-2.44 in Pakman and Paninski (2014)
         """
-        B = self.b
+        F = self.f
         c = self.c
         q1 = to_scalar(self.x_dot_A_dot_x(b) - self.x_dot_A_dot_x(a))
-        q2 = to_scalar(B.T @ b)
+        q2 = to_scalar(F.T @ b)
         q3 = c + to_scalar(self.x_dot_A_dot_x(a))
         q4 = to_scalar(2 * a.T @ self.A_dot_x(b))
-        q5 = to_scalar(B.T @ a)
+        q5 = to_scalar(F.T @ a)
         return q1, q2, q3, q4, q5
 
     def hit_time_cpp(self, x: Array, xdot: Array) -> Array:

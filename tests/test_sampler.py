@@ -148,7 +148,7 @@ def test_build_quadratic_constraint(data):
     constraint = sampler._build_constraint(A=A, f=f, sparse=False)
     assert isinstance(constraint, QuadraticConstraint)
     assert np.allclose(constraint.A, A)
-    assert np.allclose(constraint.b, f)
+    assert np.allclose(constraint.f, f)
 
 
 def test_add_constraint():
@@ -251,7 +251,7 @@ def test_save_load():
             assert np.allclose(c1.A, c2.A)
         elif isinstance(c1, QuadraticConstraint):
             assert np.allclose(c1.A, c2.A)
-            assert np.allclose(c1.b, c2.b)
+            assert np.allclose(c1.f, c2.f)
     os.remove("test_sampler.pkl")
 
 
