@@ -22,19 +22,19 @@ class TMGSampler:
 
     def __init__(
         self,
-        mu: Array = None,
-        Sigma: Array = None,
+        mu: Array | None = None,
+        Sigma: Array | None = None,
         T: float = np.pi / 2,
         gpu: bool = False,
         *,
-        Sigma_half: Array = None,
+        Sigma_half: Array | None = None,
     ) -> None:
         """
         Parameters
         ----------
         mu : Array, optional
             Mean vector of the Gaussian distribution. If None, defaults to zero vector.
-        Sigma : Array
+        Sigma : Array, optional
             Covariance matrix of the Gaussian distribution. Must be positive semi-definite.
             Do not provide if Sigma_half is given.
         T : float, optional
@@ -45,22 +45,23 @@ class TMGSampler:
             Matrix such that Sigma_half @ Sigma_half.T = Sigma.
             If provided, Sigma is not needed.
         """
-        if Sigma is None and Sigma_half is None:
+        if Sigma_half is not None:
+            self.dim = len(Sigma_half)
+            self._setup_sigma_half(Sigma_half)
+        elif Sigma is not None:
+            self.dim = len(Sigma)
+            self._setup_sigma(Sigma)
+        else:
             raise ValueError("Must provide either Sigma or Sigma_half")
-        self.dim = len(Sigma) if Sigma is not None else len(Sigma_half)
         if mu is None:
             mu = np.zeros(self.dim)
         self.mu = mu.reshape(self.dim, 1)
         self.T = T
-        self.constraints = []
+        self.constraints: list[Constraint] = []
         self.constraint_violations = 0
         self.gpu = gpu
-        self.x = None
+        self.x: Array | None = None
 
-        if Sigma_half is not None:
-            self._setup_sigma_half(Sigma_half)
-        else:
-            self._setup_sigma(Sigma)
         if self.gpu:
             self.mu = torch.tensor(self.mu).cuda()
 
@@ -96,10 +97,10 @@ class TMGSampler:
         if self.gpu:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
-            all_positive = torch.all(s >= 0)
+            all_positive = bool(torch.all(s >= 0))
         else:
             s, V = np.linalg.eigh(Sigma)
-            all_positive = np.all(s >= 0)
+            all_positive = bool(np.all(s >= 0))
         if not all_positive:
             min_eig = torch.min(s) if self.gpu else np.min(s)
             if abs(min_eig) < 1e-10:
@@ -132,10 +133,10 @@ class TMGSampler:
         if self.gpu:
             Sigma_half = torch.tensor(Sigma_half).cuda()
             s, V = torch.linalg.eigh(Sigma_half)
-            all_positive = torch.all(s >= 0)
+            all_positive = bool(torch.all(s >= 0))
         else:
             s, V = np.linalg.eigh(Sigma_half)
-            all_positive = np.all(s >= 0)
+            all_positive = bool(np.all(s >= 0))
         if not all_positive:
             min_eig = torch.min(s) if self.gpu else np.min(s)
             if abs(min_eig) < 1e-10:
@@ -150,8 +151,8 @@ class TMGSampler:
     def _build_constraint(
         self,
         *,
-        A: Array = None,
-        f: Array = None,
+        A: Array | None = None,
+        f: Array | None = None,
         c: float = 0.0,
         sparse: bool = True,
         compiled: bool = True,
@@ -201,9 +202,9 @@ class TMGSampler:
                 f = torch.tensor(f).cuda()
 
         if (A is not None) and sparse:
-            A = sparsify(A)
+            A = sparsify(A) # type: ignore[assignment]
         if (f is not None) and sparse:
-            f = sparsify(f)
+            f = sparsify(f) # type: ignore[assignment]
 
         # A_new = S @ A @ S
         if (A is not None) and (f is not None):
@@ -232,11 +233,13 @@ class TMGSampler:
             c_new = c_new[0, 0]
 
         if nonzero_A and nonzero_f:
-            return QuadraticConstraint(A, f_new, c_new, S, sparse, compiled)
+            assert A is not None
+            return QuadraticConstraint(A, f_new, float(c_new), S, sparse, compiled)
         elif nonzero_A and (not nonzero_f):
-            return SimpleQuadraticConstraint(A, c_new, S, sparse)
+            assert A is not None
+            return SimpleQuadraticConstraint(A, float(c_new), S, sparse)
         elif (not nonzero_A) and nonzero_f:
-            return LinearConstraint(f_new, c_new)
+            return LinearConstraint(f_new, float(c_new))
         else:
             raise ValueError(
                 "Constraint cannot be trivial (A and f both zero after transformation)"
@@ -245,8 +248,8 @@ class TMGSampler:
     def add_constraint(
         self,
         *,
-        A: Array = None,
-        f: Array = None,
+        A: Array | None = None,
+        f: Array | None = None,
         c: float = 0.0,
         sparse: bool = True,
         compiled: bool = True,
@@ -356,7 +359,7 @@ class TMGSampler:
                 A=A, f=f, c=c, sparse=sparse, compiled=compiled
             )
             cs.append(constraint)
-        product_constraint = ProductConstraint(cs)
+        product_constraint = ProductConstraint(tuple(cs))
         self.constraints.append(product_constraint)
 
     def _constraints_satisfied(self, x: Array) -> bool:
@@ -419,16 +422,16 @@ class TMGSampler:
         """
         if len(self.constraints) == 0:
             return np.array([np.nan]), np.array([None])
-        times = []
-        cs = []
+        times_list: list[Array] = []
+        cs_list: list[Constraint] = []
         for c in self.constraints:
             t = c.hit_time(x, xdot)
-            times.append(t)
-            cs += [c] * len(t)
-        times = np.hstack(times)
+            times_list.append(t)
+            cs_list += [c] * len(t)
+        times = np.hstack(times_list)
         nanind = np.isnan(times)
         times = times[~nanind]
-        cs = np.array(cs)[~nanind]
+        cs = np.array(cs_list)[~nanind]
         if len(times) == 0:
             return np.array([np.nan]), np.array([None])
         inds = np.argsort(times)
@@ -470,7 +473,7 @@ class TMGSampler:
         return self._binary_search(x, xdot, hmid, b2, c)
 
     def _refine_hit_time(
-        self, x: Array, xdot: Array, c: QuadraticConstraint
+        self, x: Array, xdot: Array, c: Constraint
     ) -> Tuple[Array, Array, float, bool]:
         """
         Refines the hit time for a quadratic constraint by moving the position towards the constraint
@@ -528,7 +531,7 @@ class TMGSampler:
         As a fallback, if constraints are violated after propagation, the iteration is
         redone with a new momentum. However this is extremely rare.
         """
-        t = 0
+        t: float = 0.0
         i = 0
         x_init = x
         hs, cs = self._hit_times(x, xdot)
@@ -540,6 +543,8 @@ class TMGSampler:
             cs = cs[inds]
             for pos in range(len(hs)):
                 h, c = hs[pos], cs[pos]
+                assert isinstance(c, Constraint)
+                h = float(h)
                 x_temp, xdot_temp = self._propagate(x, xdot, h)
                 zero, refine = c.is_zero(x_temp)
                 if refine and (not zero):
@@ -583,7 +588,7 @@ class TMGSampler:
 
     def sample(
         self,
-        x0: Array = None,
+        x0: Array | None = None,
         n_samples: int = 100,
         burn_in: int = 100,
         verbose=False,
@@ -594,7 +599,7 @@ class TMGSampler:
 
         Parameters
         ----------
-        x0 : Array
+        x0 : Array | None
             Initial point for the sampler. Optional if cont is True.
         n_samples : int, optional
             Number of samples to generate, default is 100.
@@ -636,6 +641,9 @@ class TMGSampler:
                 print(f"Constraint violations: {self.constraint_violations}")
         elif (not cont) and (x0 is None):
             raise ValueError("Must provide initial point if not continuing")
+        
+        if self.x is None:
+            raise ValueError("Must run burn-in before sampling with cont=True")
 
         samples = np.zeros((n_samples, self.dim))
         for i in range(n_samples):

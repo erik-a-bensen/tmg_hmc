@@ -76,6 +76,7 @@ class SimpleQuadraticConstraint(BaseQuadraticConstraint):
             if isinstance(A, Tensor):
                 A = A.cuda()
 
+        assert S is not None, "S must be provided in the dictionary"
         return cls(A, c, S, sparse)
 
     def value_(self, x: Array) -> float:
@@ -278,10 +279,6 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             self.S = S
         else:
             self._setup_values(A, S)
-        if self.compiled:
-            self.hit_time = self.hit_time_cpp
-        else:
-            self.hit_time = self.hit_time_py
 
     @classmethod
     def build_from_dict(cls, d: dict, gpu: bool) -> "QuadraticConstraint":
@@ -320,6 +317,7 @@ class QuadraticConstraint(BaseQuadraticConstraint):
             if isinstance(A, Tensor):
                 A = A.cuda()
 
+        assert S is not None, "S must be provided in the dictionary"
         return cls(A, b, c, S, sparse, d.get("compiled", True))
 
     def value_(self, x: Array) -> float:
@@ -524,3 +522,34 @@ class QuadraticConstraint(BaseQuadraticConstraint):
         s8 = soln8(*qs) + pis
         s = np.hstack([s1, s2, s3, s4, s5, s6, s7, s8])
         return np.unique(s[s > 1e-7])
+    
+    def hit_time(self, x: Array, xdot: Array) -> Array:
+        """
+        Dispatch method for the hit time for the quadratic constraint
+
+        Parameters
+        ----------
+        x : Array
+            The position of the point in the HMC trajectory
+        xdot : Array
+            The velocity of the point in the HMC trajectory
+
+        Returns
+        -------
+        Array
+            The hit time for the constraint
+
+        Notes
+        -----
+        Hit time is computed by solving Eqn 2.48 in Pakman and Paninski (2014)
+        See resources/HMC_exact_soln.nb for derivation
+        Only positive hit times are returned and any ghost solutions are filtered
+        out at a later stage.
+
+        This method dispatches to either the compiled or Python version based on the compiled attribute.
+        It is highly recommended to use the compiled version for performance reasons.
+        """
+        if self.compiled:
+            return self.hit_time_cpp(x, xdot)
+        else:
+            return self.hit_time_py(x, xdot)

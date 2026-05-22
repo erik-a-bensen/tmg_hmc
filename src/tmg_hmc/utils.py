@@ -9,8 +9,8 @@ from tmg_hmc.gpu_utils import torch, Tensor
 # ignore runtime warning
 np.seterr(divide="ignore", invalid="ignore")
 
-Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
-Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix
+Array: TypeAlias = np.ndarray | Tensor 
+Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix | Tensor
 base_path = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -26,7 +26,7 @@ def compiled_library_available() -> bool:
     return importlib.util.find_spec("tmg_hmc.compiled") is not None
 
 
-def sparsify(A: Array) -> Array:
+def sparsify(A: Array) -> Sparse:
     """
     Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
 
@@ -145,7 +145,7 @@ def stable_acos(x: complex) -> complex:
         return -1j * cmath.log(x + 1j * cmath.sqrt(1 - x * x))
 
 
-def arccos(x: float) -> float:
+def arccos(x: complex) -> float:
     """
     Computes the real component of the arccosine of a value.
 

@@ -1,13 +1,15 @@
 from __future__ import annotations
 import numpy as np
 from typing import Tuple, Protocol
-from tmg_hmc.utils import Array, get_sparse_elements
+from tmg_hmc.utils import Array, get_sparse_elements, to_scalar
 from tmg_hmc.gpu_utils import torch, Tensor
+from typing import runtime_checkable
 
 pis = np.array([-1, 0, 1]) * np.pi
 eps = 1e-12
 
 
+@runtime_checkable
 class Constraint(Protocol):
     """
     Abstract base class for constraints
@@ -24,7 +26,7 @@ class Constraint(Protocol):
         """
         Compute the value of the constraint at x
         """
-        pass
+        ...
 
     def is_satisfied(self, x: Array) -> bool:
         """
@@ -55,25 +57,25 @@ class Constraint(Protocol):
             (is_strictly_zero, is_approximately_zero)
         """
         val = self.value(x)
-        return np.isclose(val, 0), np.isclose(val, 0, atol=1e-2)
+        return bool(np.isclose(val, 0)), bool(np.isclose(val, 0, atol=1e-2))
 
     def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
         """
         Compute the coefficients of the constraint equation along the trajectory defined by a and b
         """
-        pass
+        ...
 
     def hit_time(self, a: Array, b: Array) -> Array:
         """
         Compute the hit time of the constraint along the trajectory defined by a and b
         """
-        pass
+        ...
 
     def normal(self, x: Array) -> Array:
         """
         Compute the normal vector of the constraint at x
         """
-        pass
+        ...
 
     def reflect(self, x: Array, xdot: Array) -> Array:
         """
@@ -92,11 +94,12 @@ class Constraint(Protocol):
             Reflected velocity
         """
         f = self.normal(x)
-        if isinstance(xdot, Tensor):
+        if isinstance(f, Tensor):
             norm = torch.sqrt(f.T @ f)
+            f = f / norm
         else:
-            norm = np.sqrt(f.T @ f)
-        f = f / norm
+            norm = np.sqrt(float(f.T @ f))
+            f = f / norm
         return xdot - 2 * (f.T @ xdot) * f
 
     def serialize(self) -> dict:
@@ -207,10 +210,12 @@ class ProductConstraint(Constraint):
         vals = [c.value(x) for c in self.constraints]
         normals = [c.normal(x) for c in self.constraints]
         weighted = [
-            normals[i] * np.prod(vals[:i] + vals[i + 1 :])
+            normals[i] * float(np.prod(vals[:i] + vals[i + 1 :]))
             for i in range(len(self.constraints))
         ]
-        return sum(weighted)
+        if not weighted:
+            raise ValueError("ProductConstraint has no constraints")
+        return sum(weighted[1:], weighted[0])
 
     def hit_time(self, x: Array, xdot: Array) -> Array:
         """
@@ -233,12 +238,19 @@ class ProductConstraint(Constraint):
             ht = constraint.hit_time(x, xdot)
             hit_times.append(ht)
         return np.concatenate(hit_times)
+    
+    def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
+        raise NotImplementedError("ProductConstraint does not support compute_q directly")
 
 
 class BaseQuadraticConstraint(Constraint):
     """
     Base class for quadratic constraints
     """
+
+    def __init__(self) -> None:
+        self.compute_type = "dense"
+
 
     def _setup_values(self, A: Array, S: Array) -> None:
         """
@@ -258,9 +270,7 @@ class BaseQuadraticConstraint(Constraint):
         """
         self.A_orig = A
         self.S = S
-        self.value = self.value_
-        self.normal = self.normal_
-        self.compute_q = self.compute_q_
+        self.compute_type = "dense"
 
     def _setup_values_sparse(self, A: Array, S: Array) -> None:
         """
@@ -290,33 +300,58 @@ class BaseQuadraticConstraint(Constraint):
             S[:, j].reshape((self.n, 1)) for j in cols
         ]  # S[:,j] is a column vector
         self.a_vals = vals.reshape((self.n_comps,))
-        self.value = self.value_sparse
-        self.normal = self.normal_sparse
-        self.compute_q = self.compute_q_sparse
+        self.compute_type = "sparse"
 
     def value_(self, x: Array) -> float:
         """Placeholder method for dense value computation"""
-        pass
+        raise NotImplementedError
 
     def value_sparse(self, x: Array) -> float:
         """Placeholder method for sparse value computation"""
-        pass
+        raise NotImplementedError
+
+    def value(self, x: Array) -> float:
+        """Dispatch method for value computation based on compute_type"""
+        if self.compute_type == "dense":
+            return self.value_(x)
+        elif self.compute_type == "sparse":
+            return self.value_sparse(x)
+        else:
+            raise ValueError(f"Unknown compute type {self.compute_type}")
 
     def normal_(self, x: Array) -> Array:
         """Placeholder method for dense normal vector computation"""
-        pass
+        raise NotImplementedError
 
     def normal_sparse(self, x: Array) -> Array:
         """Placeholder method for sparse normal vector computation"""
-        pass
+        raise NotImplementedError
+
+    def normal(self, x: Array) -> Array:
+        """Dispatch method for normal vector computation based on compute_type"""
+        if self.compute_type == "dense":
+            return self.normal_(x)
+        elif self.compute_type == "sparse":
+            return self.normal_sparse(x)
+        else:
+            raise ValueError(f"Unknown compute type {self.compute_type}")
 
     def compute_q_(self, a: Array, b: Array) -> Tuple[float, ...]:
         """Placeholder method for dense q term computation"""
-        pass
+        raise NotImplementedError
 
     def compute_q_sparse(self, a: Array, b: Array) -> Tuple[float, ...]:
         """Placeholder method for sparse q term computation"""
-        pass
+        raise NotImplementedError
+
+    def compute_q(self, a: Array, b: Array) -> Tuple[float, ...]:
+        """Dispatch method for q term computation based on compute_type"""
+        if self.compute_type == "dense":
+            return self.compute_q_(a, b)
+        elif self.compute_type == "sparse":
+            return self.compute_q_sparse(a, b)
+        else:
+            raise ValueError(f"Unknown compute type {self.compute_type}")
 
     @property
     def A(self):
@@ -340,12 +375,13 @@ class BaseQuadraticConstraint(Constraint):
         dot_prods = [
             self.s_rows[i].reshape((1, self.n)) @ x for i in range(self.n_comps)
         ]
-        return sum(
-            [
-                self.a_vals[i] * dot_prods[i] * self.s_cols[i].reshape((self.n, 1))
-                for i in range(self.n_comps)
-            ]
-        )
+        terms = [
+            self.a_vals[i] * dot_prods[i] * self.s_cols[i].reshape((self.n, 1))
+            for i in range(self.n_comps)
+        ]
+        if not terms:
+            raise ValueError("No components to sum")
+        return sum(terms[1:], terms[0])
 
     def x_dot_A_dot_x(self, x: Array) -> float:
         """
@@ -361,4 +397,4 @@ class BaseQuadraticConstraint(Constraint):
         float
             Result of x^T A x computation
         """
-        return x.T @ self.A_dot_x(x)
+        return to_scalar(x.T @ self.A_dot_x(x))
