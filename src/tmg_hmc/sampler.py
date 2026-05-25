@@ -24,7 +24,7 @@ class TMGSampler:
         self,
         mu: Array | None = None,
         Sigma: Array | None = None,
-        T: float = np.pi / 2,
+        T: float | None = None,
         gpu: bool = False,
         *,
         Sigma_half: Array | None = None,
@@ -45,6 +45,8 @@ class TMGSampler:
             Matrix such that :math:`S S^T = \Sigma`.
             If provided, Sigma is not needed.
         """
+        if T is None:
+            T = np.pi / 2
         self.gpu = gpu
         if Sigma_half is not None:
             self.dim = len(Sigma_half)
