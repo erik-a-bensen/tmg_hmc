@@ -165,6 +165,10 @@ Then launch Jupyter:
 ```bash
 jupyter notebook examples/
 ```
+## Documentation
+
+- [Full Documentation](https://tmg-hmc.readthedocs.io) - API reference, constraint construction guide, and examples
+- [Hit-time Calculations](resources/HMC_exact_soln.pdf) - Mathematica solutions for the hit times of each type of constraint.
 
 ## Testing
 
@@ -195,12 +199,6 @@ pytest -m "gpu"               # GPU tests only
 - Tests run on Ubuntu, Windows, and macOS
 
 See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI status.
-
-
-## Documentation
-
-- [Full Documentation](https://tmg-hmc.readthedocs.io) - API reference, constraint construction guide, and examples
-- [Hit-time Calculations](resources/HMC_exact_soln.pdf) - Mathematica solutions for the hit times of each type of constraint.
 
 ## Contributing
 
