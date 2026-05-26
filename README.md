@@ -109,10 +109,10 @@ Sigma = np.identity(2)
 sampler = TMGSampler(mu, Sigma)
 
 # Add constraint: x^2 + y^2 <= 4 (inside circle of radius 2)
-# Quadratic constraint: x^T A x + f^T x + c <= 0
-# For x^2 + y^2 - 4 <= 0, we have A = I, f = 0, c = -4
-A = np.identity(2)
-c = -4
+# Quadratic constraint: x^T A x + f^T x + c >= 0
+# For - x^2 - y^2 + 4 >= 0, we have A = -I, f = 0, c = 4
+A = -np.identity(2)
+c = 4
 sampler.add_constraint(A=A, c=c)
 
 # Sample

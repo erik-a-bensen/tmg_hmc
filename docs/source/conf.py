@@ -18,6 +18,7 @@ extensions = [
     "sphinx.ext.mathjax",  # renders LaTeX math
     "sphinx.ext.viewcode",  # adds links to source code
     "sphinx_autodoc_typehints",  # pulls type annotations into docs
+    "nbsphinx",  # renders Jupyter notebooks
 ]
 
 templates_path = ["_templates"]
@@ -30,6 +31,9 @@ napoleon_numpy_docstring = True
 # Autodoc settings
 autodoc_member_order = "bysource"  # document members in source order
 autodoc_typehints = "description"  # put type hints in the description
+
+# nbsphinx settings
+nbsphinx_execute = "never"  # Don't execute notebooks during the build process.
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
@@ -44,4 +48,11 @@ mathjax3_config = {
         "packages": {"[+]": ["boldsymbol"]},
     },
     "loader": {"load": ["[tex]/boldsymbol"]},
+}
+
+html_theme_options = {
+    "navigation_depth": 4,
+    "sticky_navigation": True,
+    "includehidden": True,
+    "titles_only": False,
 }

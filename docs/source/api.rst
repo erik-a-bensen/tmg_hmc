@@ -1,8 +1,8 @@
 API Reference
 =============
 
-Sampler
--------
+TMGSampler
+----------
 
 .. autoclass:: tmg_hmc.TMGSampler
    :members:
@@ -11,11 +11,6 @@ Sampler
 
 Constraints
 -----------
-
-.. autoclass:: tmg_hmc.constraints.Constraint
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 .. autoclass:: tmg_hmc.constraints.LinearConstraint
    :members:
