@@ -47,7 +47,14 @@ test = [
     "pre-commit",
 ]
 
-dev = ["tmg_hmc[gpu,test,examples]"]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+]
+
+
+dev = ["tmg_hmc[gpu,test,examples,docs]"]
 
 [tool.ruff]
 line-length = 88
