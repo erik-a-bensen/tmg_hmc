@@ -199,7 +199,7 @@ See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI s
 
 ## Documentation
 
-- [Full API Reference](API_DOCS.md) - Complete documentation of all functions and classes
+- [Full Documentation](https://tmg-hmc.readthedocs.io) - API reference, constraint construction guide, and examples
 - [Hit-time Calculations](resources/HMC_exact_soln.pdf) - Mathematica solutions for the hit times of each type of constraint.
 
 ## Contributing
