@@ -33,6 +33,11 @@ Base package install
 pip install tmg-hmc
 ```
 
+Example notebook support
+```bash
+pip install tmg-hmc[examples]
+```
+
 Optional GPU support
 ```bash
 pip install tmg-hmc[gpu]
@@ -57,7 +62,7 @@ Optional Testing Dependencies
 ```bash
 git clone https://github.com/erik-a-bensen/tmg_hmc.git
 cd tmg_hmc 
-pip install .[test] # Or .[all] for test + gpu
+pip install .[test] # Or .[dev] for test + examples + gpu
 ```
 
 **Requirements:**
@@ -104,10 +109,10 @@ Sigma = np.identity(2)
 sampler = TMGSampler(mu, Sigma)
 
 # Add constraint: x^2 + y^2 <= 4 (inside circle of radius 2)
-# Quadratic constraint: x^T A x + f^T x + c <= 0
-# For x^2 + y^2 - 4 <= 0, we have A = I, f = 0, c = -4
-A = np.identity(2)
-c = -4
+# Quadratic constraint: x^T A x + f^T x + c >= 0
+# For - x^2 - y^2 + 4 >= 0, we have A = -I, f = 0, c = 4
+A = -np.identity(2)
+c = 4
 sampler.add_constraint(A=A, c=c)
 
 # Sample
@@ -139,12 +144,31 @@ x0 = np.array([[0], [0]])
 samples = sampler.sample(x0, n_samples=1000, burn_in=100)
 ```
 
-## Examples
+## Running the Example Notebooks
 See the `examples/` directory for:
 - Linear constraint examples
 - Quadratic constraint examples  
 - Product constraint examples
 - Truncated Gaussian process examples
+
+Install notebook dependencies first:
+From PyPI
+```bash
+pip install tmg-hmc[examples]
+```
+Or locally
+```bash
+pip install -e .[examples]
+```
+
+Then launch Jupyter:
+```bash
+jupyter notebook examples/
+```
+## Documentation
+
+- [Full Documentation](https://tmg-hmc.readthedocs.io) - API reference, constraint construction guide, and examples
+- [Hit-time Calculations](resources/HMC_exact_soln.pdf) - Mathematica solutions for the hit times of each type of constraint.
 
 ## Testing
 
@@ -176,15 +200,9 @@ pytest -m "gpu"               # GPU tests only
 
 See the [Actions tab](https://github.com/erik-a-bensen/tmg_hmc/actions) for CI status.
 
-
-## Documentation
-
-- [Full API Reference](API_DOCS.md) - Complete documentation of all functions and classes
-- [Hit-time Calculations](resources/HMC_exact_soln.pdf) - Mathematica solutions for the hit times of each type of constraint.
-
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 

@@ -1,60 +1,77 @@
 from __future__ import annotations
 import numpy as np
 from typing import Tuple
-from tmg_hmc.constraints import Constraint, LinearConstraint, SimpleQuadraticConstraint, QuadraticConstraint, ProductConstraint
+from tmg_hmc.constraints import (
+    Constraint,
+    LinearConstraint,
+    SimpleQuadraticConstraint,
+    QuadraticConstraint,
+    ProductConstraint,
+)
 from tmg_hmc.utils import Array, sparsify, is_nonzero_array
 import warnings
 import pickle
-from tmg_hmc import get_torch, get_tensor_type
+from tmg_hmc.gpu_utils import torch
 
-torch, Tensor = get_torch(), get_tensor_type()
 
 class TMGSampler:
     """
     Hamiltonian Monte Carlo sampler for Multivariate Gaussian distributions
     with linear and quadratic constraints.
     """
-    def __init__(self, mu: Array = None, Sigma: Array = None, T: float = np.pi/2, gpu: bool = False,*,Sigma_half: Array = None) -> None:
-        """
+
+    def __init__(
+        self,
+        mu: Array | None = None,
+        Sigma: Array | None = None,
+        T: float | None = None,
+        gpu: bool = False,
+        *,
+        Sigma_half: Array | None = None,
+    ) -> None:
+        r"""
         Parameters
         ----------
         mu : Array, optional
             Mean vector of the Gaussian distribution. If None, defaults to zero vector.
-        Sigma : Array
+        Sigma : Array, optional
             Covariance matrix of the Gaussian distribution. Must be positive semi-definite.
             Do not provide if Sigma_half is given.
         T : float, optional
-            Integration time for the Hamiltonian dynamics. Default is pi/2.
+            Integration time for the Hamiltonian dynamics. Default is :math:`\pi/2`.
         gpu : bool, optional
             Whether to use GPU acceleration with PyTorch. Default is False.
         Sigma_half : Array, optional
-            Matrix such that Sigma_half @ Sigma_half.T = Sigma. 
+            Matrix such that :math:`S S^T = \Sigma`.
             If provided, Sigma is not needed.
         """
-        if Sigma is None and Sigma_half is None:
+        if T is None:
+            T = np.pi / 2
+        self.gpu = gpu
+        if Sigma_half is not None:
+            self.dim = len(Sigma_half)
+            self._setup_sigma_half(Sigma_half)
+        elif Sigma is not None:
+            self.dim = len(Sigma)
+            self._setup_sigma(Sigma)
+        else:
             raise ValueError("Must provide either Sigma or Sigma_half")
-        self.dim = len(Sigma) if Sigma is not None else len(Sigma_half)
         if mu is None:
             mu = np.zeros(self.dim)
         self.mu = mu.reshape(self.dim, 1)
         self.T = T
-        self.constraints = []
+        self.constraints: list[Constraint] = []
         self.constraint_violations = 0
-        self.gpu = gpu
-        self.x = None
-        
-        if Sigma_half is not None:
-            self._setup_sigma_half(Sigma_half)
-        else:
-            self._setup_sigma(Sigma)
+        self.x: Array | None = None
+
         if self.gpu:
             self.mu = torch.tensor(self.mu).cuda()
-            
+
     def _setup_sigma(self, Sigma: Array) -> None:
         """
         Sets up the Sigma_half matrix from the covariance matrix Sigma.
         Ensures that Sigma is positive semi-definite.
-        
+
         Parameters
         ----------
         Sigma : Array
@@ -78,33 +95,33 @@ class TMGSampler:
             raise ValueError("Sigma must be a square matrix")
         if not np.allclose(Sigma, Sigma.T):
             raise ValueError("Sigma must be symmetric")
-        
+
         if self.gpu:
             Sigma = torch.tensor(Sigma).cuda()
             s, V = torch.linalg.eigh(Sigma)
-            all_positive = torch.all(s >= 0)
+            all_positive = bool(torch.all(s >= 0))
         else:
             s, V = np.linalg.eigh(Sigma)
-            all_positive = np.all(s >= 0)
+            all_positive = bool(np.all(s >= 0))
         if not all_positive:
             min_eig = torch.min(s) if self.gpu else np.min(s)
             if abs(min_eig) < 1e-10:
-                s -= 2*min_eig
+                s -= 2 * min_eig
             else:
                 raise ValueError("Sigma must be positive semi-definite")
         if self.gpu:
             self.Sigma_half = V @ torch.diag(torch.sqrt(s)) @ V.T
         else:
             self.Sigma_half = V @ np.diag(np.sqrt(s)) @ V.T
-        
+
     def _setup_sigma_half(self, Sigma_half: Array) -> None:
-        """
+        r"""
         Sets up the Sigma_half matrix directly.
 
         Parameters
         ----------
         Sigma_half : Array
-            Matrix such that Sigma_half @ Sigma_half.T = Sigma.
+            Matrix such that :math:`S S^T = \Sigma`.
 
         Raises
         ------
@@ -118,14 +135,14 @@ class TMGSampler:
         if self.gpu:
             Sigma_half = torch.tensor(Sigma_half).cuda()
             s, V = torch.linalg.eigh(Sigma_half)
-            all_positive = torch.all(s >= 0)
+            all_positive = bool(torch.all(s >= 0))
         else:
             s, V = np.linalg.eigh(Sigma_half)
-            all_positive = np.all(s >= 0)
+            all_positive = bool(np.all(s >= 0))
         if not all_positive:
             min_eig = torch.min(s) if self.gpu else np.min(s)
             if abs(min_eig) < 1e-10:
-                s -= 2*min_eig
+                s -= 2 * min_eig
             else:
                 raise ValueError("Sigma_half must be positive semi-definite")
         if self.gpu:
@@ -133,10 +150,21 @@ class TMGSampler:
         else:
             self.Sigma_half = V @ np.diag(s) @ V.T
 
-    def _build_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> Constraint:
-        """
-        Builds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+    def _build_constraint(
+        self,
+        *,
+        A: Array | None = None,
+        f: Array | None = None,
+        c: float = 0.0,
+        sparse: bool = True,
+        compiled: bool = True,
+    ) -> Constraint:
+        r"""
+        Builds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -159,19 +187,22 @@ class TMGSampler:
         Notes
         -----
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero, the appropriate constraint type is chosen.
         """
         S = self.Sigma_half
         mu = self.mu
         if f is not None:
-            f = f.reshape(self.dim, 1) 
+            f = f.reshape(self.dim, 1)
         if A is not None:
             if not np.allclose(A, A.T):
                 raise ValueError("A must be symmetric")
-        
+
         if self.gpu:
             if A is not None:
                 A = torch.tensor(A).cuda()
@@ -179,10 +210,10 @@ class TMGSampler:
                 f = torch.tensor(f).cuda()
 
         if (A is not None) and sparse:
-            A = sparsify(A)
+            A = sparsify(A)  # type: ignore[assignment]
         if (f is not None) and sparse:
-            f = sparsify(f)
-        
+            f = sparsify(f)  # type: ignore[assignment]
+
         # A_new = S @ A @ S
         if (A is not None) and (f is not None):
             Amu = A @ mu
@@ -190,9 +221,9 @@ class TMGSampler:
             c_new = c + mu.T @ Amu + mu.T @ f
         elif (A is not None) and (f is None):
             Amu = A @ mu
-            #f_new = 2*S @ A @ mu
+            # f_new = 2*S @ A @ mu
             f_new = S @ Amu * 2
-            #c_new = c + mu.T @ A @ mu
+            # c_new = c + mu.T @ A @ mu
             c_new = mu.T @ Amu + c
         elif (A is None) and (f is not None):
             f_new = S @ f
@@ -207,21 +238,36 @@ class TMGSampler:
         if self.gpu:
             c_new = c_new.item()
         else:
-            c_new = c_new[0,0]
-        
+            c_new = c_new[0, 0]
+
         if nonzero_A and nonzero_f:
-            return QuadraticConstraint(A, f_new, c_new, S, sparse, compiled)
+            assert A is not None
+            return QuadraticConstraint(A, f_new, float(c_new), S, sparse, compiled)
         elif nonzero_A and (not nonzero_f):
-            return SimpleQuadraticConstraint(A, c_new, S, sparse)
+            assert A is not None
+            return SimpleQuadraticConstraint(A, float(c_new), S, sparse)
         elif (not nonzero_A) and nonzero_f:
-            return LinearConstraint(f_new, c_new)
+            return LinearConstraint(f_new, float(c_new))
         else:
-            raise ValueError("Constraint cannot be trivial (A and f both zero after transformation)")
-        
-    def add_constraint(self, *, A: Array = None, f: Array = None, c: float = 0.0, sparse: bool = True, compiled: bool = True) -> None:
-        """
-        Adds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+            raise ValueError(
+                "Constraint cannot be trivial (A and f both zero after transformation)"
+            )
+
+    def add_constraint(
+        self,
+        *,
+        A: Array | None = None,
+        f: Array | None = None,
+        c: float = 0.0,
+        sparse: bool = True,
+        compiled: bool = True,
+    ) -> None:
+        r"""
+        Adds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -244,18 +290,33 @@ class TMGSampler:
         Notes
         -----
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
+        the appropriate constraint type is chosen.
         """
-        constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+        constraint = self._build_constraint(
+            A=A, f=f, c=c, sparse=sparse, compiled=compiled
+        )
         self.constraints.append(constraint)
 
-    def add_product_constraint(self, *, parameters: list[list[Array]] | list[dict[str,Array]], sparse: bool = True, compiled: bool = True) -> None:
-        """
-        Adds a constraint to the sampler of the form:
-            x.T @ A @ x + f.T @ x + c >= 0
+    def add_product_constraint(
+        self,
+        *,
+        parameters: list[list[Array]] | list[dict[str, Array]],
+        sparse: bool = True,
+        compiled: bool = True,
+    ) -> None:
+        r"""
+        Adds a constraint to the sampler.
+
+        .. math::
+
+            \mathbf{x}^T A \mathbf{x} + \mathbf{f}^T \mathbf{x} + c \geq 0
 
         Parameters
         ----------
@@ -277,41 +338,56 @@ class TMGSampler:
         -----
         For product constraints, you must provide lists of each component (A, f, c).
         The constraint is automatically transformed to account for the Gaussian's mean and covariance.
-        The transformed constraint becomes:
-            y.T @ (S @ A @ S) @ y + (2 * S @ A @ mu + S @ f).T @ y + (mu.T @ A @ mu + mu.T @ f + c) >= 0
-        where y = S^{-1} (x - mu) and S = Sigma_half.
-        Depending on whether A and f are non-zero, the appropriate constraint type is chosen.
+
+        .. math::
+
+            \mathbf{y}^T (S A S) \mathbf{y} + (2 S A \pmb{\mu} + S \mathbf{f})^T \mathbf{y} + (\pmb{\mu}^T A \pmb{\mu} + \pmb{\mu}^T \mathbf{f} + c) \geq 0
+
+        where :math:`\mathbf{y} = S^{-1}(\mathbf{x} - \pmb{\mu})` and :math:`S = \Sigma^{1/2}`.
+        Depending on whether :math:`A` and :math:`\mathbf{f}` are non-zero after transformation,
+        the appropriate constraint type is chosen.
         """
+
         def parse_param(p):
             if isinstance(p, dict):
-                A = p.get('A', None)
-                f = p.get('f', None)
-                c = p.get('c', 0.0)
+                A = p.get("A", None)
+                f = p.get("f", None)
+                c = p.get("c", 0.0)
             else:
                 if len(p) != 3:
-                    raise ValueError("Each parameter list must be of length 3 corresponding to A, f, and c")
+                    raise ValueError(
+                        "Each parameter list must be of length 3 corresponding to A, f, and c"
+                    )
                 A, f, c = p
             return A, f, c
+
         if len(parameters) == 0:
             raise ValueError("Must provide at least one constraint parameter set")
         elif len(parameters) == 1:
-            warnings.warn("Only one constraint provided, adding as regular constraint instead of product constraint", UserWarning)
+            warnings.warn(
+                "Only one constraint provided, adding as regular constraint instead of product constraint",
+                UserWarning,
+            )
             A, f, c = parse_param(parameters[0])
-            constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+            constraint = self._build_constraint(
+                A=A, f=f, c=c, sparse=sparse, compiled=compiled
+            )
             self.constraints.append(constraint)
             return
         cs = []
         for p in parameters:
             A, f, c = parse_param(p)
-            constraint = self._build_constraint(A=A, f=f, c=c, sparse=sparse, compiled=compiled)
+            constraint = self._build_constraint(
+                A=A, f=f, c=c, sparse=sparse, compiled=compiled
+            )
             cs.append(constraint)
-        product_constraint = ProductConstraint(cs)
+        product_constraint = ProductConstraint(tuple(cs))
         self.constraints.append(product_constraint)
-            
+
     def _constraints_satisfied(self, x: Array) -> bool:
         """
         Checks if all constraints are satisfied at point x.
-        
+
         Parameters
         ----------
         x : Array
@@ -325,7 +401,7 @@ class TMGSampler:
         if len(self.constraints) == 0:
             return True
         return all([c.is_satisfied(x) for c in self.constraints])
-    
+
     def _propagate(self, x: Array, xdot: Array, t: float) -> Tuple[Array, Array]:
         """
         Propagates the state (x, xdot) forward in time by t according to the Hamiltonian dynamics
@@ -348,7 +424,7 @@ class TMGSampler:
         xnew = xdot * np.sin(t) + x * np.cos(t)
         xdotnew = xdot * np.cos(t) - x * np.sin(t)
         return xnew, xdotnew
-    
+
     def _hit_times(self, x: Array, xdot: Array) -> Tuple[Array, Array]:
         """
         Computes the hit times for all constraints given the current state (x, xdot).
@@ -368,26 +444,28 @@ class TMGSampler:
         """
         if len(self.constraints) == 0:
             return np.array([np.nan]), np.array([None])
-        times = []
-        cs = []
+        times_list: list[Array] = []
+        cs_list: list[Constraint] = []
         for c in self.constraints:
             t = c.hit_time(x, xdot)
-            times.append(t)
-            cs += [c] * len(t)
-        times = np.hstack(times)
+            times_list.append(t)
+            cs_list += [c] * len(t)
+        times = np.hstack(times_list)
         nanind = np.isnan(times)
         times = times[~nanind]
-        cs = np.array(cs)[~nanind]
+        cs = np.array(cs_list)[~nanind]
         if len(times) == 0:
             return np.array([np.nan]), np.array([None])
         inds = np.argsort(times)
         return times[inds], cs[inds]
-    
-    def _binary_search(self, x: Array, xdot: Array, b1: float, b2: float, c: Constraint) -> Tuple[Array, Array, float, bool]:
+
+    def _binary_search(
+        self, x: Array, xdot: Array, b1: float, b2: float, c: Constraint
+    ) -> Tuple[Array, Array, float, bool]:
         """
         Performs a binary search to find the precise hit time for a constraint
         between bounds b1 and b2.
-        
+
         Parameters
         ----------
         x : Array
@@ -410,15 +488,17 @@ class TMGSampler:
         hmid = (b1 + b2) / 2
         xmid, xdotmid = self._propagate(x, xdot, hmid)
         x2, _ = self._propagate(x, xdot, b2)
-        if np.isclose(c.value(xmid),0., atol=1e-12):
+        if np.isclose(c.value(xmid), 0.0, atol=1e-12):
             return xmid, xdotmid, hmid, True
         if np.sign(c.value(xmid)) != np.sign(c.value(x1)):
             return self._binary_search(x, xdot, b1, hmid, c)
         return self._binary_search(x, xdot, hmid, b2, c)
-    
-    def _refine_hit_time(self, x: Array, xdot: Array, c: QuadraticConstraint) -> Tuple[Array, Array, float, bool]:
+
+    def _refine_hit_time(
+        self, x: Array, xdot: Array, c: Constraint
+    ) -> Tuple[Array, Array, float, bool]:
         """
-        Refines the hit time for a quadratic constraint by moving the position towards the constraint 
+        Refines the hit time for a quadratic constraint by moving the position towards the constraint
         boundary and performing a binary search.
 
         Parameters
@@ -429,7 +509,7 @@ class TMGSampler:
             Current momentum in the transformed space.
         c : QuadraticConstraint
             The quadratic constraint to refine.
-        
+
         Returns
         -------
         Tuple[Array, Array, float, bool]
@@ -447,7 +527,7 @@ class TMGSampler:
             # If the refined position is still on the same side of the constraint, no hit was found
             return x, xdot, 0, False
         return self._binary_search(x, xdot, 0, h, c)
-    
+
     def _iterate(self, x: Array, xdot: Array, verbose: bool = False) -> Array:
         """
         Performs a single iteration of the HMC sampler, propagating the state (x, xdot)
@@ -470,10 +550,10 @@ class TMGSampler:
         Notes
         -----
         This method handles refines hit times to improve accuracy and manages ghost hits.
-        As a fallback, if constraints are violated after propagation, the iteration is 
+        As a fallback, if constraints are violated after propagation, the iteration is
         redone with a new momentum. However this is extremely rare.
         """
-        t = 0 
+        t: float = 0.0
         i = 0
         x_init = x
         hs, cs = self._hit_times(x, xdot)
@@ -485,10 +565,14 @@ class TMGSampler:
             cs = cs[inds]
             for pos in range(len(hs)):
                 h, c = hs[pos], cs[pos]
+                assert isinstance(c, Constraint)
+                h = float(h)
                 x_temp, xdot_temp = self._propagate(x, xdot, h)
                 zero, refine = c.is_zero(x_temp)
                 if refine and (not zero):
-                    x_temp, xdot_temp, h_adj, zero = self._refine_hit_time(x_temp, xdot_temp, c)
+                    x_temp, xdot_temp, h_adj, zero = self._refine_hit_time(
+                        x_temp, xdot_temp, c
+                    )
                     h += h_adj
                 if zero:
                     x, xdot = x_temp, xdot_temp
@@ -510,11 +594,11 @@ class TMGSampler:
             return x
         self.constraint_violations += 1
         if verbose:
-            print(f"Constraint violated, redoing iteration")
+            print("Constraint violated, redoing iteration")
 
         xdot = self.sample_xdot()
         return self._iterate(x_init, xdot, verbose)
-    
+
     def sample_xdot(self) -> Array:
         """
         Samples a new momentum vector xdot from the standard normal distribution handling GPU if necessary.
@@ -523,14 +607,21 @@ class TMGSampler:
             return torch.randn(self.dim, 1, dtype=torch.float64).cuda()
         else:
             return np.random.standard_normal(self.dim).reshape(self.dim, 1)
-            
-    def sample(self, x0: Array = None, n_samples: int = 100, burn_in: int = 100, verbose=False, cont: bool = False) -> Array:
+
+    def sample(
+        self,
+        x0: Array | None = None,
+        n_samples: int = 100,
+        burn_in: int = 100,
+        verbose=False,
+        cont: bool = False,
+    ) -> Array:
         """
         Generates samples from the truncated multivariate Gaussian distribution.
 
         Parameters
         ----------
-        x0 : Array
+        x0 : Array | None
             Initial point for the sampler. Optional if cont is True.
         n_samples : int, optional
             Number of samples to generate, default is 100.
@@ -564,7 +655,7 @@ class TMGSampler:
             self.constraint_violations = 0
             for i in range(burn_in):
                 if verbose:
-                    print(f"burn-in iteration: {i+1} of {burn_in}")
+                    print(f"burn-in iteration: {i + 1} of {burn_in}")
                 xdot = self.sample_xdot()
                 x = self._iterate(x, xdot, verbose)
             self.x = x
@@ -573,16 +664,19 @@ class TMGSampler:
         elif (not cont) and (x0 is None):
             raise ValueError("Must provide initial point if not continuing")
 
+        if self.x is None:
+            raise ValueError("Must run burn-in before sampling with cont=True")
+
         samples = np.zeros((n_samples, self.dim))
         for i in range(n_samples):
             if verbose:
-                print(f"sample iteration: {i+1} of {n_samples}")
+                print(f"sample iteration: {i + 1} of {n_samples}")
             xdot = self.sample_xdot()
             self.x = self._iterate(self.x, xdot, verbose)
             correlated_x = (self.Sigma_half @ self.x).flatten() + self.mu.flatten()
             if self.gpu:
                 correlated_x = correlated_x.cpu().numpy()
-            samples[i,:] = correlated_x
+            samples[i, :] = correlated_x
         if verbose:
             print(f"Constraint violations: {self.constraint_violations}")
         return samples
@@ -592,12 +686,12 @@ class TMGSampler:
         Saves the sampler state to a pickled file.
         """
         d = self.__dict__.copy()
-        d['constraints'] = [c.serialize() for c in d['constraints']]
+        d["constraints"] = [c.serialize() for c in d["constraints"]]
         if self.gpu:
-            d['mu'] = d['mu'].cpu().numpy()
-            d['Sigma_half'] = d['Sigma_half'].cpu().numpy()
-            d['x'] = d['x'].cpu().numpy()
-        with open(filename, 'wb') as f:
+            d["mu"] = d["mu"].cpu().numpy()
+            d["Sigma_half"] = d["Sigma_half"].cpu().numpy()
+            d["x"] = d["x"].cpu().numpy()
+        with open(filename, "wb") as f:
             pickle.dump(d, f)
 
     @classmethod
@@ -605,14 +699,16 @@ class TMGSampler:
         """
         Loads the sampler state from a pickled file.
         """
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             d = pickle.load(f)
-        d['constraints'] = [Constraint.deserialize(c, d['gpu']) for c in d['constraints']]
-        sampler = cls(mu=d['mu'], Sigma_half=d['Sigma_half'], T=d['T'], gpu=d['gpu'])
-        sampler.constraints = d['constraints']
-        if d['x'] is not None:
-            if d['gpu']:
-                sampler.x = torch.tensor(d['x']).cuda()
+        d["constraints"] = [
+            Constraint.deserialize(c, d["gpu"]) for c in d["constraints"]
+        ]
+        sampler = cls(mu=d["mu"], Sigma_half=d["Sigma_half"], T=d["T"], gpu=d["gpu"])
+        sampler.constraints = d["constraints"]
+        if d["x"] is not None:
+            if d["gpu"]:
+                sampler.x = torch.tensor(d["x"]).cuda()
             else:
-                sampler.x = d['x']
+                sampler.x = d["x"]
         return sampler

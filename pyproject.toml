@@ -23,7 +23,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
-    "scipy"
+    "scipy",
+    "scipy-stubs"
 ]
 
 [project.optional-dependencies]
@@ -31,13 +32,37 @@ gpu = [
     "torch>=2.0.0"
 ]
 
+examples = [
+    "jupyter",
+    "notebook",
+    "matplotlib"
+]
+
 test = [
     "pytest>=7.0",
     "pytest-cov",
     "hypothesis>=6.100",
+    "ruff",
+    "mypy",
+    "pre-commit",
 ]
 
-all = ["tmg_hmc[gpu,test]"]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+    "nbsphinx",
+]
+
+
+dev = ["tmg_hmc[gpu,test,examples,docs]"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]  # line too long — ruff format handles this
 
 [project.urls]
 Homepage = "https://github.com/erik-a-bensen/tmg_hmc"
@@ -66,3 +91,8 @@ repair-wheel-command = ""
 [tool.cibuildwheel.windows]
 before-build = "pip install delvewheel"
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
+
+[tool.mypy]
+[[tool.mypy.overrides]]
+module = "tmg_hmc.compiled"
+ignore_missing_imports = true

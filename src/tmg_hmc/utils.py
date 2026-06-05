@@ -1,18 +1,18 @@
-import numpy as np 
+import numpy as np
 import cmath
-from scipy.sparse import csc_matrix, csr_matrix, coo_matrix    
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
 from typing import Tuple, TypeAlias
+import importlib.util
 import os
-from tmg_hmc import get_torch, get_tensor_type
-
-torch, Tensor = get_torch(), get_tensor_type()
+from tmg_hmc.gpu_utils import torch, Tensor
 
 # ignore runtime warning
-np.seterr(divide='ignore', invalid='ignore')
+np.seterr(divide="ignore", invalid="ignore")
 
-Array: TypeAlias = np.ndarray | Tensor | coo_matrix | None
-Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix
+Array: TypeAlias = np.ndarray | Tensor
+Sparse: TypeAlias = csc_matrix | csr_matrix | coo_matrix | Tensor
 base_path = os.path.dirname(os.path.abspath(__file__))
+
 
 def compiled_library_available() -> bool:
     """
@@ -23,13 +23,10 @@ def compiled_library_available() -> bool:
     bool
         True if the shared library is available, False otherwise.
     """
-    try:
-        import tmg_hmc.compiled as c 
-        return True
-    except ImportError:
-        return False
+    return importlib.util.find_spec("tmg_hmc.compiled") is not None
 
-def sparsify(A: Array) -> Array:
+
+def sparsify(A: Array) -> Sparse:
     """
     Converts a dense numpy array or a PyTorch tensor to a sparse COO matrix.
 
@@ -50,6 +47,7 @@ def sparsify(A: Array) -> Array:
     else:
         raise ValueError(f"Unknown type {type(A)}")
 
+
 def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     """
     Extracts the row, column, and data elements from a sparse matrix.
@@ -67,7 +65,7 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
     if isinstance(A, coo_matrix):
         return A.row, A.col, A.data
     elif isinstance(A, Tensor):
-        if A.layout == sparse_coo:
+        if A.layout == torch.sparse_coo:
             row, col = A.indices()
             return row, col, A.values()
         else:
@@ -78,6 +76,7 @@ def get_sparse_elements(A: Array) -> Tuple[Array, Array, Array]:
         return row, col, A[row, col]
     else:
         raise ValueError(f"Unknown type {type(A)}")
+
 
 def to_scalar(x: Array | float) -> float:
     """
@@ -99,7 +98,8 @@ def to_scalar(x: Array | float) -> float:
         return x.cpu().item()
     elif len(x.shape) == 1:
         return x[0]
-    return x[0,0]
+    return x[0, 0]
+
 
 def is_nonzero_array(x: Array) -> bool:
     """
@@ -124,6 +124,7 @@ def is_nonzero_array(x: Array) -> bool:
     else:
         raise ValueError(f"Unknown type {type(x)}")
 
+
 def stable_acos(x: complex) -> complex:
     """
     Computes a numerically stable arccosine for complex numbers.
@@ -141,9 +142,10 @@ def stable_acos(x: complex) -> complex:
     if np.abs(x) > 1:
         return cmath.acos(x)
     else:
-        return -1j * cmath.log(x + 1j*cmath.sqrt(1 - x*x))
+        return -1j * cmath.log(x + 1j * cmath.sqrt(1 - x * x))
 
-def arccos(x: float) -> float:
+
+def arccos(x: complex) -> float:
     """
     Computes the real component of the arccosine of a value.
 
