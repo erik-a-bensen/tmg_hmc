@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath("../../src"))
 project = "tmg-hmc"
 copyright = "2026, Erik A. Bensen, Mikael Kuusela"
 author = "Erik A. Bensen, Mikael Kuusela"
-release = "1.0.3"
+release = "1.0.4"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
