@@ -213,7 +213,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this package in your research, please cite:
 
 **Software:**
-> Bensen, E. A., & Kuusela, M. (2026). tmg_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints. *Journal of Open Source Software*. [In Review]
+> Bensen, E. A., & Kuusela, M. (2026). tmg_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints. https://github.com/erik-a-bensen/tmg_hmc
 
 **Methodology:**
 > Pakman, A., & Paninski, L. (2014). Exact Hamiltonian Monte Carlo for Truncated Multivariate Gaussians. *Journal of Computational and Graphical Statistics*, 23(2), 518-542. https://doi.org/10.1080/10618600.2013.788448
@@ -226,8 +226,7 @@ If you use this package in your research, please cite:
   title={tmg\_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints},
   author={Bensen, Erik A. and Kuusela, Mikael},
   journal={Journal of Open Source Software},
-  year={2026},
-  note={[In Review]}
+  howpublished={\url{https://github.com/erik-a-bensen/tmg_hmc}}
 }
 
 @article{PakmanPaninski2014,
