@@ -222,7 +222,7 @@ If you use this package in your research, please cite:
 <summary>BibTeX</summary>
 
 ```bibtex
-@article{Bensen2026tmghmc,
+@misc{Bensen2026tmghmc,
   title={tmg\_hmc: A Python package for Exact HMC Sampling for Truncated Multivariate Gaussians with Linear and Quadratic Constraints},
   author={Bensen, Erik A. and Kuusela, Mikael},
   year={2026},
